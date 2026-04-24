@@ -758,6 +758,42 @@
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
   border-color: hsl(var(--primary) / 0.3);
+}/* Add to globals.css for extra polish */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Smooth theme transition for all elements */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 
 .read-the-docs {
