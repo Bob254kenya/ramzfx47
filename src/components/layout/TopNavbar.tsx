@@ -26,7 +26,7 @@ const navItems = [
   { title: 'Free Bots', url: '/smart-bot', icon: Zap },
   { title: 'Advanced Tool $ Speed Bot', url: '/auto-trade', icon: Bot },
   { title: 'Copy Trading', url: '/copy-trading', icon: Users },
-  { title: 'Account', url: '/settings', icon: Settings },
+  { title: 'Automated Bots', url: '/settings', icon: Settings },
 ];
 
 export default function TopNavbar() {
