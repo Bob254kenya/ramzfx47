@@ -3181,24 +3181,6 @@ export default function TradingChart() {
           </div>
         </div>
       </div>
-
-      {/* Add custom scrollbar styles if needed */}
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #0f172a;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #334155;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #475569;
-        }
-      `}</style>
     </div>
   );
 }
