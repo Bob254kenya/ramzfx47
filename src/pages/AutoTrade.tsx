@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   TrendingUp, TrendingDown, Activity, BarChart3, ArrowUp, ArrowDown, Minus,
   Target, ShieldAlert, Gauge, Volume2, VolumeX, Clock, Zap, Trophy, Play, Pause, StopCircle, Eye, EyeOff, RefreshCw,
-  Plus, X, LineChart, Anchor, Copy, Users, Wifi, WifiOff
+  Plus, X, LineChart, Anchor, Copy, Users, Wifi, WifiOff, Combine
 } from 'lucide-react';
 
 // ============================================
@@ -394,8 +394,8 @@ function addTick(symbol: string, digit: number, price: number) {
   globalTickHistory[symbol].push(digit);
   globalTickPrices[symbol].push(price);
   
-  if (globalTickHistory[symbol].length > 2000) globalTickHistory[symbol].shift();
-  if (globalTickPrices[symbol].length > 2000) globalTickPrices[symbol].shift();
+  if (globalTickHistory[symbol].length > 5000) globalTickHistory[symbol].shift();
+  if (globalTickPrices[symbol].length > 5000) globalTickPrices[symbol].shift();
   
   if (tickCallbacks[symbol]) {
     tickCallbacks[symbol].forEach(cb => cb());
@@ -510,7 +510,7 @@ function calcBBSeries(prices: number[], period: number, mult: number = 2) {
 }
 
 function calcRSISeries(prices: number[], period: number = 14): (number | null)[] {
-  const result: (number | null)[] = [null];
+  const result: (number | null)[] = [];
   if (prices.length < period + 1) return prices.map(() => null);
   let gains = 0, losses = 0;
   for (let i = 1; i <= period; i++) {
@@ -741,11 +741,14 @@ export default function TradingChart() {
   const lastSpokenSignal = useRef('');
 
   const [strategyEnabled, setStrategyEnabled] = useState(false);
-  const [strategyMode, setStrategyMode] = useState<'pattern' | 'digit'>('pattern');
+  const [strategyMode, setStrategyMode] = useState<'pattern' | 'digit' | 'combined'>('pattern');
   const [patternInput, setPatternInput] = useState('');
   const [digitCondition, setDigitCondition] = useState('==');
   const [digitCompare, setDigitCompare] = useState('5');
   const [digitWindow, setDigitWindow] = useState('3');
+  // Combined strategy state
+  const [combinedPatternsInput, setCombinedPatternsInput] = useState('');
+  const [combinedPatternsList, setCombinedPatternsList] = useState<string[]>([]);
 
   const [botRunning, setBotRunning] = useState(false);
   const [botPaused, setBotPaused] = useState(false);
@@ -766,9 +769,11 @@ export default function TradingChart() {
     maxTrades: '50',
   });
   const [botStats, setBotStats] = useState({ trades: 0, wins: 0, losses: 0, pnl: 0, currentStake: 0, consecutiveLosses: 0 });
-  const [turboMode, setTurboMode] = useState(false);
+  const [turboMode, setTurboMode] = useState(true); // Changed to true by default
 
   const [displaySymbols, setDisplaySymbols] = useState<string[]>([]);
+  // Filtration chamber display mode
+  const [filtrationDisplayMode, setFiltrationDisplayMode] = useState<'symbol' | 'digit'>('symbol');
 
   // ============================================
   // VIRTUAL HOOK STATE VARIABLES
@@ -1067,6 +1072,115 @@ export default function TradingChart() {
   const cleanPattern = patternInput.toUpperCase().replace(/[^EO]/g, '');
   const patternValid = cleanPattern.length >= 2;
 
+  // Parse combined patterns from input
+  const parseCombinedPatterns = useCallback((input: string): string[] => {
+    if (!input.trim()) return [];
+    // Split by comma, trim each pattern, filter empty
+    const patterns = input.split(',').map(p => p.trim().toUpperCase()).filter(p => p.length > 0);
+    return patterns;
+  }, []);
+
+  // Update combined patterns list when input changes
+  useEffect(() => {
+    const patterns = parseCombinedPatterns(combinedPatternsInput);
+    setCombinedPatternsList(patterns);
+  }, [combinedPatternsInput, parseCombinedPatterns]);
+
+  // Check combined pattern match
+  const checkCombinedPatternMatch = useCallback((): boolean => {
+    const ticks = getTickHistory(botConfig.botSymbol);
+    const pricesHistory = getTickPrices(botConfig.botSymbol);
+    
+    if (ticks.length === 0 || combinedPatternsList.length === 0) return false;
+    
+    // For each pattern, check if it matches the recent ticks
+    for (const pattern of combinedPatternsList) {
+      if (pattern.length === 0) continue;
+      
+      // Check if pattern length is within tick history
+      if (ticks.length < pattern.length) continue;
+      
+      // Get recent ticks of pattern length
+      const recentTicks = ticks.slice(-pattern.length);
+      let matches = true;
+      
+      // Check each character of pattern
+      for (let i = 0; i < pattern.length; i++) {
+        const expected = pattern[i];
+        const actualDigit = recentTicks[i];
+        
+        // Handle digit patterns (0-9)
+        if (expected >= '0' && expected <= '9') {
+          const expectedNum = parseInt(expected);
+          if (actualDigit !== expectedNum) {
+            matches = false;
+            break;
+          }
+        }
+        // Handle O (Odd) pattern
+        else if (expected === 'O') {
+          const isOdd = actualDigit % 2 !== 0;
+          if (!isOdd) {
+            matches = false;
+            break;
+          }
+        }
+        // Handle E (Even) pattern
+        else if (expected === 'E') {
+          const isEven = actualDigit % 2 === 0;
+          if (!isEven) {
+            matches = false;
+            break;
+          }
+        }
+        // Handle Over pattern
+        else if (expected === 'OVER') {
+          if (actualDigit <= 4) {
+            matches = false;
+            break;
+          }
+        }
+        // Handle Under pattern
+        else if (expected === 'UNDER') {
+          if (actualDigit >= 5) {
+            matches = false;
+            break;
+          }
+        }
+        // Handle Up pattern (price increase)
+        else if (expected === 'UP' && pricesHistory.length >= pattern.length) {
+          const recentPrices = pricesHistory.slice(-pattern.length);
+          const prevPrice = recentPrices[i - 1];
+          const currentPriceVal = recentPrices[i];
+          if (!prevPrice || currentPriceVal <= prevPrice) {
+            matches = false;
+            break;
+          }
+        }
+        // Handle Down pattern (price decrease)
+        else if (expected === 'DOWN' && pricesHistory.length >= pattern.length) {
+          const recentPrices = pricesHistory.slice(-pattern.length);
+          const prevPrice = recentPrices[i - 1];
+          const currentPriceVal = recentPrices[i];
+          if (!prevPrice || currentPriceVal >= prevPrice) {
+            matches = false;
+            break;
+          }
+        }
+        else {
+          matches = false;
+          break;
+        }
+      }
+      
+      if (matches) {
+        return true;
+      }
+    }
+    
+    return false;
+  }, [botConfig.botSymbol, combinedPatternsList]);
+
   const checkPatternMatch = useCallback((): boolean => {
     const ticks = getTickHistory(botConfig.botSymbol);
     if (ticks.length < cleanPattern.length) return false;
@@ -1102,10 +1216,12 @@ export default function TradingChart() {
     if (!strategyEnabled) return true;
     if (strategyMode === 'pattern') {
       return checkPatternMatch();
-    } else {
+    } else if (strategyMode === 'digit') {
       return checkDigitCondition();
+    } else {
+      return checkCombinedPatternMatch();
     }
-  }, [strategyEnabled, strategyMode, checkPatternMatch, checkDigitCondition]);
+  }, [strategyEnabled, strategyMode, checkPatternMatch, checkDigitCondition, checkCombinedPatternMatch]);
 
   // Helper function to get outcome symbol for trade
   const getOutcomeSymbol = useCallback((trade: TradeRecord): string => {
@@ -2589,7 +2705,7 @@ export default function TradingChart() {
               )}
             </div>
 
-            {/* Strategy Section */}
+            {/* Strategy Section with Combined Mode */}
             <div className="border-t border-border pt-2 mt-1">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[10px] font-semibold text-warning flex items-center gap-1">
@@ -2617,7 +2733,17 @@ export default function TradingChart() {
                       onClick={() => setStrategyMode('digit')}
                       disabled={botRunning}
                     >
-                      Digit Condition 
+                      Digit Cond
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={strategyMode === 'combined' ? 'default' : 'outline'}
+                      className="text-[9px] h-6 px-2 flex-1"
+                      onClick={() => setStrategyMode('combined')}
+                      disabled={botRunning}
+                    >
+                      <Combine className="w-3 h-3 mr-0.5" />
+                      Combined
                     </Button>
                   </div>
 
@@ -2636,7 +2762,7 @@ export default function TradingChart() {
                           patternValid ? `✓ Pattern: ${cleanPattern}` : `✗ Need at least 2 characters (E/O)`}
                       </div>
                     </div>
-                  ) : (
+                  ) : strategyMode === 'digit' ? (
                     <div className="grid grid-cols-3 gap-1">
                       <div>
                         <label className="text-[8px] text-muted-foreground">If last </label>
@@ -2660,10 +2786,33 @@ export default function TradingChart() {
                           className="h-7 text-[10px]" />
                       </div>
                     </div>
+                  ) : (
+                    <div>
+                      <label className="text-[8px] text-muted-foreground">Combined Patterns (comma separated)</label>
+                      <Textarea
+                        placeholder="e.g., 112, 55, OEE, OVEROVER, 99U, 1,2,1"
+                        value={combinedPatternsInput}
+                        onChange={e => setCombinedPatternsInput(e.target.value.toUpperCase())}
+                        disabled={botRunning}
+                        className="h-20 text-[10px] font-mono min-h-0 mt-1"
+                      />
+                      <div className="text-[8px] text-muted-foreground mt-1">
+                        Format: 0-9 (digit), O (odd), E (even), OVER (digit>4), UNDER (digit<5), UP (price up), DOWN (price down)
+                      </div>
+                      {combinedPatternsList.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {combinedPatternsList.map((p, idx) => (
+                            <Badge key={idx} variant="outline" className="text-[8px] font-mono">
+                              {p}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   <div className="text-[8px] text-muted-foreground text-center py-1">
-                    Bot will wait for {strategyMode === 'pattern' ? 'pattern match' : 'digit condition'} before each trade
+                    Bot will wait for {strategyMode === 'pattern' ? 'pattern match' : strategyMode === 'digit' ? 'digit condition' : 'any combined pattern'} before each trade
                   </div>
                 </div>
               )}
@@ -2724,11 +2873,19 @@ export default function TradingChart() {
             </div>
           </div>
 
-          {/* Last 26 Digits - Filtration Chamber */}
+          {/* Last 26 Digits - Filtration Chamber with Display Mode Toggle */}
           <div className="bg-card border border-border rounded-xl p-3">
             <h3 className="text-xs font-semibold text-foreground mb-2 flex items-center justify-between">
               <span>Ramzfx Filtration Chamber 🚆</span>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-5 text-[8px] px-1.5"
+                  onClick={() => setFiltrationDisplayMode(mode => mode === 'symbol' ? 'digit' : 'symbol')}
+                >
+                  {filtrationDisplayMode === 'symbol' ? 'Show Digits' : 'Show Symbols'}
+                </Button>
                 <Badge variant="outline" className="text-[8px] animate-pulse">
                   🟢 LIVE
                 </Badge>
@@ -2841,32 +2998,57 @@ export default function TradingChart() {
             
             <div className="flex gap-1 flex-wrap justify-center">
               {displaySymbols.length > 0 ? (
-                displaySymbols.map((symbol, i) => {
+                displaySymbols.map((displayValue, i) => {
                   const isLast = i === displaySymbols.length - 1;
+                  // Get the actual digit for coloring when in digit mode
+                  const actualDigit = digitStats.last26Digits[i];
                   
                   let bgColor = '';
                   let textColor = '';
                   
-                  // Color mapping based on symbol meaning
-                  if (symbol === 'R' || symbol === 'U') {
-                    bgColor = 'bg-profit/20';
-                    textColor = 'text-profit';
-                  } else if (symbol === 'F' || symbol === 'O') {
-                    bgColor = 'bg-loss/20';
-                    textColor = 'text-loss';
-                  } else if (symbol === 'E') {
-                    bgColor = 'bg-[#3FB950]/20';
-                    textColor = 'text-[#3FB950]';
-                  } else if (symbol === 'S') {
-                    bgColor = 'bg-primary/20';
-                    textColor = 'text-primary';
-                  } else if (symbol === 'D') {
-                    bgColor = 'bg-[#D29922]/20';
-                    textColor = 'text-[#D29922]';
+                  if (filtrationDisplayMode === 'symbol') {
+                    // Symbol mode - use existing color logic
+                    if (displayValue === 'R' || displayValue === 'U') {
+                      bgColor = 'bg-profit/20';
+                      textColor = 'text-profit';
+                    } else if (displayValue === 'F' || displayValue === 'O') {
+                      bgColor = 'bg-loss/20';
+                      textColor = 'text-loss';
+                    } else if (displayValue === 'E') {
+                      bgColor = 'bg-[#3FB950]/20';
+                      textColor = 'text-[#3FB950]';
+                    } else if (displayValue === 'S') {
+                      bgColor = 'bg-primary/20';
+                      textColor = 'text-primary';
+                    } else if (displayValue === 'D') {
+                      bgColor = 'bg-[#D29922]/20';
+                      textColor = 'text-[#D29922]';
+                    } else {
+                      bgColor = 'bg-muted/20';
+                      textColor = 'text-foreground';
+                    }
                   } else {
-                    bgColor = 'bg-muted/20';
-                    textColor = 'text-foreground';
+                    // Digit mode - color by digit value
+                    if (actualDigit !== undefined) {
+                      if (actualDigit >= 5) {
+                        bgColor = 'bg-profit/20';
+                        textColor = 'text-profit';
+                      } else if (actualDigit <= 4) {
+                        bgColor = 'bg-loss/20';
+                        textColor = 'text-loss';
+                      }
+                      // For digits 5, also highlight as threshold
+                      if (actualDigit === 5) {
+                        bgColor = 'bg-primary/30';
+                        textColor = 'text-primary';
+                      }
+                    } else {
+                      bgColor = 'bg-muted/20';
+                      textColor = 'text-foreground';
+                    }
                   }
+                  
+                  const showValue = filtrationDisplayMode === 'symbol' ? displayValue : (actualDigit !== undefined ? actualDigit.toString() : '?');
                   
                   return (
                     <motion.div
@@ -2878,15 +3060,21 @@ export default function TradingChart() {
                         isLast ? 'w-9 h-11 text-base ring-2 ring-primary' : ''
                       } ${bgColor} ${textColor} ${
                         isLast ? 'border-primary' : 
-                        symbol === 'R' || symbol === 'U' ? 'border-profit/30' :
-                        symbol === 'F' || symbol === 'O' ? 'border-loss/30' :
-                        symbol === 'E' ? 'border-[#3FB950]/30' :
-                        symbol === 'S' ? 'border-primary/30' :
-                        symbol === 'D' ? 'border-[#D29922]/30' :
-                        'border-border'
+                        filtrationDisplayMode === 'symbol' ? (
+                          displayValue === 'R' || displayValue === 'U' ? 'border-profit/30' :
+                          displayValue === 'F' || displayValue === 'O' ? 'border-loss/30' :
+                          displayValue === 'E' ? 'border-[#3FB950]/30' :
+                          displayValue === 'S' ? 'border-primary/30' :
+                          displayValue === 'D' ? 'border-[#D29922]/30' :
+                          'border-border'
+                        ) : (
+                          actualDigit !== undefined && actualDigit >= 5 ? 'border-profit/30' :
+                          actualDigit !== undefined && actualDigit <= 4 ? 'border-loss/30' :
+                          'border-border'
+                        )
                       }`}
                     >
-                      {symbol}
+                      {showValue}
                     </motion.div>
                   );
                 })
@@ -2897,7 +3085,7 @@ export default function TradingChart() {
               )}
             </div>
             <div className="text-center text-[8px] text-muted-foreground mt-2">
-              🔄 Updates with every tick • Latest digit highlighted
+              🔄 Updates with every tick • Latest digit highlighted • Toggle to view digits
             </div>
           </div>
 
