@@ -2095,1141 +2095,1110 @@ export default function TradingChart() {
 
   const legend = getLegendText();
 
+  // --- Begin Styled Layout ---
   return (
-    <div className="space-y-4 max-w-[1920px] mx-auto p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       {/* TP/SL Notification Popup */}
       <TPSLNotificationPopup />
-      
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />Ramzfx Trading Chart
-          </h1>
-          <p className="text-xs text-muted-foreground">{marketName} • {timeframe} • {candles.length} candles</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Connection Status */}
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] ${
-            derivApi.isConnected ? 'bg-profit/20 text-profit' : 'bg-loss/20 text-loss'
-          }`}>
-            {derivApi.isConnected ? (
-              <>
-                <Wifi className="w-3 h-3" />
-                <span>Connected</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-3 h-3" />
-                <span>Disconnected refresh page</span>
-              </>
-            )}
-          </div>
-          <Button
-            onClick={handleManualRefresh}
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin-slow' : ''}`} />
-            Refresh
-          </Button>
-          <Button
-            onClick={() => setShowChart(!showChart)}
-            variant="outline"
-            size="sm"
-            className="gap-1"
-          >
-            {showChart ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showChart ? "Hide Chart" : "Show Chart"}
-          </Button>
-          <Badge className="font-mono text-sm" variant="outline">
-            {currentPrice.toFixed(4)}
-          </Badge>
-        </div>
-      </div>
 
-      {/* Market Selector */}
-      <div className="bg-card border border-border rounded-xl p-3">
-        <div className="flex flex-wrap gap-1 mb-2">
-          {GROUPS.map(g => (
-            <Button key={g.value} size="sm" variant={groupFilter === g.value ? 'default' : 'outline'}
-              className="h-6 text-[10px] px-2" onClick={() => setGroupFilter(g.value)}>
-              {g.label}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-1 max-h-20 overflow-auto">
-          {filteredMarkets.map(m => (
-            <Button key={m.symbol} size="sm"
-              variant={symbol === m.symbol ? 'default' : 'ghost'}
-              className={`h-6 text-[9px] px-2 ${symbol === m.symbol ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-              onClick={() => setSymbol(m.symbol)}>
-              {m.name}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Timeframe and Candle Count */}
-      <div className="flex flex-wrap gap-2 justify-between items-center">
-        <div className="flex flex-wrap gap-1">
-          {TIMEFRAMES.map(tf => (
-            <Button key={tf} size="sm" variant={timeframe === tf ? 'default' : 'outline'}
-              className={`h-7 text-xs px-3 ${timeframe === tf ? 'bg-primary text-primary-foreground' : ''}`}
-              onClick={() => setTimeframe(tf)}>
-              {tf}
-            </Button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-[10px] text-muted-foreground">Candles (1000-5000):</label>
-          <Select value={String(candleCount)} onValueChange={v => setCandleCount(Math.min(Math.max(parseInt(v), CANDLE_CONFIG.minCandles), CANDLE_CONFIG.maxCandles))}>
-            <SelectTrigger className="h-7 text-xs w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[1000, 2000, 3000, 4000, 5000].map(c => (
-                <SelectItem key={c} value={String(c)}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        {/* LEFT: Chart + Info */}
-        <div className="xl:col-span-8 space-y-3">
-          {/* Candlestick Chart */}
-          <AnimatePresence mode="wait">
-            {showChart && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="bg-[#0D1117] border border-[#30363D] rounded-xl overflow-hidden">
-                  <canvas ref={canvasRef} className="w-full" style={{ height: 520, cursor: 'crosshair' }} />
+      {/* Outer Container: Max width, centered, with subtle border */}
+      <div className="max-w-[2000px] mx-auto space-y-6">
+        
+        {/* Header Card */}
+        <Card className="backdrop-blur-sm bg-slate-900/80 border border-slate-800 shadow-2xl rounded-2xl overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <BarChart3 className="w-6 h-6 text-primary" />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Indicators Panel */}
-          <div className="bg-card border border-border rounded-xl p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <LineChart className="w-3.5 h-3.5 text-primary" /> Indicators
-              </h3>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-6 text-[10px] gap-1"
-                onClick={() => setShowIndicatorPanel(!showIndicatorPanel)}
-              >
-                <Plus className="w-3 h-3" />
-                Add Indicator
-              </Button>
-            </div>
-            
-            {showIndicatorPanel && (
-              <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-lg">
-                {['RSI', 'BB', 'MA', 'MACD'].map(type => (
-                  <Button
-                    key={type}
-                    size="sm"
-                    variant="outline"
-                    className="h-6 text-[9px]"
-                    onClick={() => addIndicator(type as IndicatorType)}
-                    disabled={indicators.some(i => i.type === type)}
-                  >
-                    + {type}
-                  </Button>
-                ))}
-              </div>
-            )}
-            
-            {indicators.length > 0 ? (
-              <div className="space-y-1.5">
-                {indicators.map(indicator => (
-                  <div key={indicator.id} className="flex items-center justify-between p-1.5 bg-muted/20 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={indicator.enabled}
-                        onCheckedChange={() => toggleIndicator(indicator.id)}
-                        className="scale-75"
-                      />
-                      <span className="text-[10px] font-mono">{indicator.type}</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-5 w-5 p-0 text-muted-foreground hover:text-loss"
-                      onClick={() => removeIndicator(indicator.id)}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                    Ramzfx Trading Chart
+                  </h1>
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <span>{marketName}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                    <span>{timeframe}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                    <span>{candles.length} candles</span>
                   </div>
-                ))}
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground text-xs">
-                No indicators added. Click "Add Indicator" to add RSI, BB, MA, or MACD.
-              </div>
-            )}
-          </div>
-
-          {/* Price Info Panel */}
-          <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
-            {[
-              { label: 'Price', value: currentPrice.toFixed(4), color: 'text-foreground' },
-              { label: 'Last Digit', value: String(lastDigit), color: 'text-primary' },
-              { label: 'Support', value: support.toFixed(2), color: 'text-[#3FB950]' },
-              { label: 'Resistance', value: resistance.toFixed(2), color: 'text-[#F85149]' },
-              { label: 'BB Upper', value: bb.upper.toFixed(2), color: 'text-[#BC8CFF]' },
-              { label: 'BB Middle', value: bb.middle.toFixed(2), color: 'text-[#BC8CFF]' },
-              { label: 'BB Lower', value: bb.lower.toFixed(2), color: 'text-[#BC8CFF]' },
-            ].map(item => (
-              <div key={item.label} className="bg-card border border-border rounded-lg p-2 text-center">
-                <div className="text-[9px] text-muted-foreground">{item.label}</div>
-                <div className={`font-mono text-xs font-bold ${item.color}`}>{item.value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Digit Analysis - Real-Time Updates */}
-          <div className="bg-card border border-border rounded-xl p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground">Ramzfx Digit Analysis (Real-Time)</h3>
-              <div className="flex items-center gap-2">
-                <label className="text-[9px] text-muted-foreground">Tick Range:</label>
-                <Select value={String(tickRange)} onValueChange={v => setTickRange(parseInt(v))}>
-                  <SelectTrigger className="h-7 text-xs w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TICK_RANGES.map(r => (
-                      <SelectItem key={r} value={String(r)}>{r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Badge variant="outline" className="text-[9px] animate-pulse">
-                  Live: {totalTicks} ticks
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                  derivApi.isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                }`}>
+                  {derivApi.isConnected ? (
+                    <>
+                      <Wifi className="w-3.5 h-3.5" />
+                      <span>Connected</span>
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="w-3.5 h-3.5" />
+                      <span>Disconnected</span>
+                    </>
+                  )}
+                </div>
+                <Button
+                  onClick={handleManualRefresh}
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300"
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin-slow' : ''}`} />
+                  Refresh
+                </Button>
+                <Button
+                  onClick={() => setShowChart(!showChart)}
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300"
+                >
+                  {showChart ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+                  {showChart ? "Hide Chart" : "Show Chart"}
+                </Button>
+                <Badge className="font-mono text-lg px-4 py-1.5 bg-slate-800 border border-slate-700 text-emerald-400" variant="outline">
+                  {currentPrice.toFixed(4)}
                 </Badge>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div className="bg-[#D29922]/10 border border-[#D29922]/30 rounded-lg p-2">
-                <div className="text-[9px] text-[#D29922]">Odd</div>
-                <div className="font-mono text-sm font-bold text-[#D29922]">{oddPercentage.toFixed(1)}%</div>
-                <div className="h-1.5 bg-muted rounded-full mt-1"><div className="h-full bg-[#D29922] rounded-full" style={{ width: `${oddPercentage}%` }} /></div>
-              </div>
-              <div className="bg-[#3FB950]/10 border border-[#3FB950]/30 rounded-lg p-2">
-                <div className="text-[9px] text-[#3FB950]">Even</div>
-                <div className="font-mono text-sm font-bold text-[#3FB950]">{evenPercentage.toFixed(1)}%</div>
-                <div className="h-1.5 bg-muted rounded-full mt-1"><div className="h-full bg-[#3FB950] rounded-full" style={{ width: `${evenPercentage}%` }} /></div>
-              </div>
-              <div className="bg-primary/10 border border-primary/30 rounded-lg p-2">
-                <div className="text-[9px] text-primary">Over 4 (5-9)</div>
-                <div className="font-mono text-sm font-bold text-primary">{overPercentage.toFixed(1)}%</div>
-                <div className="h-1.5 bg-muted rounded-full mt-1"><div className="h-full bg-primary rounded-full" style={{ width: `${overPercentage}%` }} /></div>
-              </div>
-              <div className="bg-[#D29922]/10 border border-[#D29922]/30 rounded-lg p-2">
-                <div className="text-[9px] text-[#D29922]">Under 5 (0-4)</div>
-                <div className="font-mono text-sm font-bold text-[#D29922]">{underPercentage.toFixed(1)}%</div>
-                <div className="h-1.5 bg-muted rounded-full mt-1"><div className="h-full bg-[#D29922] rounded-full" style={{ width: `${underPercentage}%` }} /></div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-5 md:grid-cols-10 gap-1.5">
-              {Array.from({ length: 10 }, (_, d) => {
-                const pct = percentages[d] || 0;
-                const count = frequency[d] || 0;
-                const isHot = pct > 12;
-                const isWarm = pct > 9;
-                const isBestMatch = d === mostCommon;
-                const isBestDiffer = d === leastCommon;
-                return (
-                  <button key={d}
-                    onClick={() => { setSelectedPrediction(String(d)); }}
-                    className={`relative rounded-lg p-2 text-center transition-all border cursor-pointer hover:ring-2 hover:ring-primary ${
-                      selectedPrediction === String(d) ? 'ring-2 ring-primary' : ''
-                    } ${isHot ? 'bg-loss/10 border-loss/40 text-loss' :
-                      isWarm ? 'bg-warning/10 border-warning/40 text-warning' :
-                      'bg-card border-border text-primary'}`}
-                  >
-                    <div className="font-mono text-lg font-bold">{d}</div>
-                    <div className="text-[8px]">{count} ({pct.toFixed(1)}%)</div>
-                    <div className="h-1 bg-muted rounded-full mt-1">
-                      <div className={`h-full rounded-full ${isHot ? 'bg-loss' : isWarm ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${Math.min(100, pct * 5)}%` }} />
-                    </div>
-                    {isBestMatch && (
-                      <Badge className="absolute -top-1 -right-1 text-[7px] px-1 bg-profit text-profit-foreground">Match</Badge>
-                    )}
-                    {isBestDiffer && (
-                      <Badge className="absolute -top-1 -left-1 text-[7px] px-1 bg-loss text-loss-foreground">Diff</Badge>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            
-            <div className="text-center text-[8px] text-muted-foreground animate-pulse">
-              🔄 Updating in real-time with each new tick
-            </div>
-          </div>
-
-          {/* Strategic Recommendations */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div className="bg-card border border-profit/30 rounded-lg p-2">
-              <div className="text-[9px] text-muted-foreground">Most Appearing </div>
-              <div className="font-mono text-lg font-bold text-profit">{mostCommon}</div>
-              <div className="text-[8px] text-muted-foreground">{percentages[mostCommon]?.toFixed(1)}% frequency</div>
-            </div>
-            <div className="bg-card border border-loss/30 rounded-lg p-2">
-              <div className="text-[9px] text-muted-foreground">Least Appearing </div>
-              <div className="font-mono text-lg font-bold text-loss">{leastCommon}</div>
-              <div className="text-[8px] text-muted-foreground">{percentages[leastCommon]?.toFixed(1)}% frequency</div>
-            </div>
-            <div className="bg-card border border-[#D29922]/30 rounded-lg p-2">
-              <div className="text-[9px] text-muted-foreground">Even/Odd</div>
-              <div className={`font-mono text-lg font-bold ${evenPercentage > 50 ? 'text-[#3FB950]' : 'text-[#D29922]'}`}>
-                {evenPercentage > 50 ? 'EVEN' : 'ODD'}
-              </div>
-              <div className="text-[8px] text-muted-foreground">{Math.max(evenPercentage, oddPercentage).toFixed(1)}%</div>
-            </div>
-            <div className="bg-card border border-primary/30 rounded-lg p-2">
-              <div className="text-[9px] text-muted-foreground">Over/Under</div>
-              <div className={`font-mono text-lg font-bold ${overPercentage > 50 ? 'text-primary' : 'text-[#D29922]'}`}>
-                {overPercentage > 50 ? 'OVER' : 'UNDER'}
-              </div>
-              <div className="text-[8px] text-muted-foreground">{Math.max(overPercentage, underPercentage).toFixed(1)}%</div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT: Signals + Bot + Last 26 Digits */}
-        <div className="xl:col-span-4 space-y-3">
-          {/* Voice AI Toggle */}
-          <div className="bg-card border border-primary/30 rounded-xl p-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 text-primary" />Ramzfx AI Voice Signals
-              </h3>
-              <Button
-                size="sm"
-                variant={voiceEnabled ? 'default' : 'outline'}
-                className="h-7 text-[10px] gap-1"
-                onClick={() => {
-                  setVoiceEnabled(!voiceEnabled);
-                  if (!voiceEnabled) {
-                    const u = new SpeechSynthesisUtterance('Voice signals enabled');
-                    u.rate = 1.1;
-                    window.speechSynthesis?.speak(u);
-                  } else {
-                    window.speechSynthesis?.cancel();
-                  }
-                }}
-              >
-                {voiceEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-                {voiceEnabled ? 'ON' : 'OFF'}
-              </Button>
-            </div>
-            {voiceEnabled && (
-              <p className="text-[9px] text-muted-foreground mt-1">🔊 Ramzfx AI will announce trade results</p>
-            )}
-          </div>
-
-          {/* Trading Signals */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-card border border-border rounded-xl p-3">
-              <div className="flex items-center gap-1 mb-1">
-                {riseSignal.direction === 'Rise' ? <TrendingUp className="w-3.5 h-3.5 text-profit" /> : <TrendingDown className="w-3.5 h-3.5 text-loss" />}
-                <span className="text-[10px] font-semibold">Rise/Fall</span>
-              </div>
-              <div className={`font-mono text-sm font-bold ${riseSignal.direction === 'Rise' ? 'text-profit' : 'text-loss'}`}>
-                {riseSignal.direction}
-              </div>
-              <div className="text-[8px] text-muted-foreground mb-1">RSI: {rsi.toFixed(1)}</div>
-              <div className="h-1.5 bg-muted rounded-full">
-                <div className={`h-full rounded-full ${riseSignal.direction === 'Rise' ? 'bg-profit' : 'bg-loss'}`}
-                  style={{ width: `${riseSignal.confidence}%` }} />
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-3">
-              <div className="flex items-center gap-1 mb-1">
-                <Activity className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] font-semibold">Even/Odd</span>
-              </div>
-              <div className={`font-mono text-sm font-bold ${eoSignal.direction === 'Even' ? 'text-[#3FB950]' : 'text-[#D29922]'}`}>
-                {eoSignal.direction}
-              </div>
-              <div className="text-[8px] text-muted-foreground mb-1">{evenPercentage.toFixed(1)}% even</div>
-              <div className="h-1.5 bg-muted rounded-full">
-                <div className={`h-full rounded-full ${eoSignal.direction === 'Even' ? 'bg-[#3FB950]' : 'bg-[#D29922]'}`}
-                  style={{ width: `${eoSignal.confidence}%` }} />
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-3">
-              <div className="flex items-center gap-1 mb-1">
-                <ArrowUp className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] font-semibold">Over/Under</span>
-              </div>
-              <div className={`font-mono text-sm font-bold ${ouSignal.direction === 'Over' ? 'text-primary' : 'text-[#D29922]'}`}>
-                {ouSignal.direction}
-              </div>
-              <div className="text-[8px] text-muted-foreground mb-1">{overPercentage.toFixed(1)}% over</div>
-              <div className="h-1.5 bg-muted rounded-full">
-                <div className={`h-full rounded-full ${ouSignal.direction === 'Over' ? 'bg-primary' : 'bg-[#D29922]'}`}
-                  style={{ width: `${ouSignal.confidence}%` }} />
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-3">
-              <div className="flex items-center gap-1 mb-1">
-                <Target className="w-3.5 h-3.5 text-profit" />
-                <span className="text-[10px] font-semibold">Match Digit</span>
-              </div>
-              <div className="font-mono text-sm font-bold text-profit">Digit {matchSignal.digit}</div>
-              <div className="text-[8px] text-muted-foreground mb-1">{percentages[mostCommon]?.toFixed(1)}%</div>
-              <div className="h-1.5 bg-muted rounded-full">
-                <div className="h-full bg-profit rounded-full" style={{ width: `${matchSignal.confidence}%` }} />
-              </div>
-            </div>
-          </div>
-
-          {/* AUTO BOT PANEL */}
-          <div className={`bg-card border rounded-xl p-3 space-y-2 ${botRunning ? 'border-profit glow-profit' : 'border-border'}`}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 text-primary" /> Milliefx Speed Bot
-              </h3>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant={turboMode ? 'default' : 'outline'}
-                  className={`h-6 text-[9px] px-2 ${turboMode ? 'bg-profit hover:bg-profit/90 text-profit-foreground animate-pulse' : ''}`}
-                  onClick={() => setTurboMode(!turboMode)}
-                  disabled={botRunning}
+        {/* Market Selector Card */}
+        <Card className="backdrop-blur-sm bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex flex-wrap gap-1">
+              {GROUPS.map(g => (
+                <Button 
+                  key={g.value} 
+                  size="sm" 
+                  variant={groupFilter === g.value ? 'default' : 'outline'}
+                  className={`h-7 text-xs px-3 ${groupFilter === g.value ? 'bg-primary shadow-lg' : 'border-slate-700 text-slate-400'}`}
+                  onClick={() => setGroupFilter(g.value)}
                 >
-                  <Zap className="w-3 h-3 mr-0.5" />
-                  {turboMode ? '⚡ TURBO' : 'Turbo'}
+                  {g.label}
                 </Button>
-                {botRunning && (
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                    <Badge className="text-[8px] bg-profit text-profit-foreground">RUNNING</Badge>
-                  </motion.div>
-                )}
-              </div>
+              ))}
             </div>
+            <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-600">
+              {filteredMarkets.map(m => (
+                <Button 
+                  key={m.symbol} 
+                  size="sm"
+                  variant={symbol === m.symbol ? 'default' : 'ghost'}
+                  className={`h-7 text-xs px-3 transition-all ${
+                    symbol === m.symbol 
+                      ? 'bg-primary text-white shadow-md' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                  onClick={() => setSymbol(m.symbol)}
+                >
+                  {m.name}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-            <div>
-              <label className="text-[9px] text-muted-foreground">Market</label>
-              <Select value={botConfig.botSymbol} onValueChange={handleBotSymbolChange} disabled={botRunning}>
-                <SelectTrigger className="h-8 text-xs">
+        {/* Timeframe & Controls Card */}
+        <Card className="backdrop-blur-sm bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+          <CardContent className="p-4 flex flex-wrap justify-between items-center gap-3">
+            <div className="flex flex-wrap gap-1">
+              {TIMEFRAMES.map(tf => (
+                <Button 
+                  key={tf} 
+                  size="sm" 
+                  variant={timeframe === tf ? 'default' : 'outline'}
+                  className={`h-8 text-sm px-4 ${timeframe === tf ? 'bg-primary' : 'border-slate-700 text-slate-400'}`}
+                  onClick={() => setTimeframe(tf)}
+                >
+                  {tf}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 bg-slate-800/30 p-1.5 rounded-lg">
+              <label className="text-xs text-slate-400">Candles:</label>
+              <Select value={String(candleCount)} onValueChange={v => setCandleCount(Math.min(Math.max(parseInt(v), CANDLE_CONFIG.minCandles), CANDLE_CONFIG.maxCandles))}>
+                <SelectTrigger className="h-8 text-xs w-28 bg-slate-800 border-slate-700">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {ALL_MARKETS.map(m => (
-                    <SelectItem key={m.symbol} value={m.symbol}>
-                      {m.name}
-                    </SelectItem>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  {[1000, 2000, 3000, 4000, 5000].map(c => (
+                    <SelectItem key={c} value={String(c)}>{c}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
 
-            <Select value={botConfig.contractType} onValueChange={v => setBotConfig(p => ({ ...p, contractType: v }))} disabled={botRunning}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>{CONTRACT_TYPES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
-            </Select>
+        {/* Main Grid Layout - Improved for large screens */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          
+          {/* LEFT COLUMN: Chart + Info */}
+          <div className="xl:col-span-8 space-y-6">
+            
+            {/* Chart Container */}
+            <AnimatePresence mode="wait">
+              {showChart && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-2xl overflow-hidden border border-slate-800 shadow-2xl"
+                >
+                  <canvas ref={canvasRef} className="w-full bg-slate-950" style={{ height: 560, cursor: 'crosshair', display: 'block' }} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {['DIGITMATCH','DIGITDIFF','DIGITOVER','DIGITUNDER'].includes(botConfig.contractType) && (
-              <div>
-                <label className="text-[9px] text-muted-foreground">Prediction (0-9)</label>
-                <div className="grid grid-cols-5 gap-1">
-                  {Array.from({ length: 10 }, (_, i) => (
-                    <button key={i} disabled={botRunning} onClick={() => setBotConfig(p => ({ ...p, prediction: String(i) }))}
-                      className={`h-6 rounded text-[10px] font-mono font-bold transition-all ${
-                        botConfig.prediction === String(i) ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-secondary'
-                      }`}>{i}</button>
-                  ))}
+            {/* Indicators Panel */}
+            <Card className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <LineChart className="w-4 h-4 text-primary" /> Technical Indicators
+                  </h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs border-slate-700 bg-slate-800/50 hover:bg-slate-800"
+                    onClick={() => setShowIndicatorPanel(!showIndicatorPanel)}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Add Indicator
+                  </Button>
                 </div>
-              </div>
-            )}
+                
+                {showIndicatorPanel && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-slate-800/30 rounded-xl">
+                    {['RSI', 'BB', 'MA', 'MACD'].map(type => (
+                      <Button
+                        key={type}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-slate-700 text-slate-300"
+                        onClick={() => addIndicator(type as IndicatorType)}
+                        disabled={indicators.some(i => i.type === type)}
+                      >
+                        + {type}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                
+                {indicators.length > 0 ? (
+                  <div className="space-y-2">
+                    {indicators.map(indicator => (
+                      <div key={indicator.id} className="flex items-center justify-between p-2 bg-slate-800/40 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={indicator.enabled}
+                            onCheckedChange={() => toggleIndicator(indicator.id)}
+                            className="data-[state=checked]:bg-primary"
+                          />
+                          <span className="text-sm font-mono text-slate-300">{indicator.type}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-400"
+                          onClick={() => removeIndicator(indicator.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500 text-sm">
+                    No indicators added. Click "Add Indicator" to get started.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[9px] text-muted-foreground">Stake ($)</label>
-                <Input type="number" min="0.35" step="0.01" value={botConfig.stake}
-                  onChange={e => setBotConfig(p => ({ ...p, stake: e.target.value }))} disabled={botRunning} className="h-7 text-xs" />
+            {/* Price Info Grid */}
+            <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+              {[
+                { label: 'Price', value: currentPrice.toFixed(4), color: 'text-white' },
+                { label: 'Last Digit', value: String(lastDigit), color: 'text-primary' },
+                { label: 'Support', value: support.toFixed(2), color: 'text-emerald-400' },
+                { label: 'Resistance', value: resistance.toFixed(2), color: 'text-rose-400' },
+                { label: 'BB Upper', value: bb.upper.toFixed(2), color: 'text-purple-400' },
+                { label: 'BB Middle', value: bb.middle.toFixed(2), color: 'text-purple-400' },
+                { label: 'BB Lower', value: bb.lower.toFixed(2), color: 'text-purple-400' },
+              ].map(item => (
+                <div key={item.label} className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center backdrop-blur-sm">
+                  <div className="text-xs text-slate-400">{item.label}</div>
+                  <div className={`font-mono text-lg font-bold ${item.color}`}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Digit Analysis */}
+            <Card className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex flex-wrap justify-between items-center gap-3">
+                  <h3 className="text-sm font-semibold text-white">Ramzfx Digit Analysis (Real-Time)</h3>
+                  <div className="flex items-center gap-3">
+                    <label className="text-xs text-slate-400">Tick Range:</label>
+                    <Select value={String(tickRange)} onValueChange={v => setTickRange(parseInt(v))}>
+                      <SelectTrigger className="h-8 text-xs w-24 bg-slate-800 border-slate-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {TICK_RANGES.map(r => (
+                          <SelectItem key={r} value={String(r)}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="outline" className="text-xs border-primary/50 text-primary animate-pulse bg-primary/5">
+                      Live: {totalTicks} ticks
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    <div className="text-xs text-amber-400">Odd</div>
+                    <div className="font-mono text-2xl font-bold text-amber-400">{oddPercentage.toFixed(1)}%</div>
+                    <Progress value={oddPercentage} className="h-1.5 mt-2 bg-slate-700" indicatorClassName="bg-amber-400" />
+                  </div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                    <div className="text-xs text-emerald-400">Even</div>
+                    <div className="font-mono text-2xl font-bold text-emerald-400">{evenPercentage.toFixed(1)}%</div>
+                    <Progress value={evenPercentage} className="h-1.5 mt-2 bg-slate-700" indicatorClassName="bg-emerald-400" />
+                  </div>
+                  <div className="bg-primary/10 border border-primary/20 rounded-xl p-3">
+                    <div className="text-xs text-primary">Over 4 (5-9)</div>
+                    <div className="font-mono text-2xl font-bold text-primary">{overPercentage.toFixed(1)}%</div>
+                    <Progress value={overPercentage} className="h-1.5 mt-2 bg-slate-700" indicatorClassName="bg-primary" />
+                  </div>
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    <div className="text-xs text-amber-400">Under 5 (0-4)</div>
+                    <div className="font-mono text-2xl font-bold text-amber-400">{underPercentage.toFixed(1)}%</div>
+                    <Progress value={underPercentage} className="h-1.5 mt-2 bg-slate-700" indicatorClassName="bg-amber-400" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
+                  {Array.from({ length: 10 }, (_, d) => {
+                    const pct = percentages[d] || 0;
+                    const count = frequency[d] || 0;
+                    const isHot = pct > 12;
+                    const isWarm = pct > 9;
+                    const isBestMatch = d === mostCommon;
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => { setSelectedPrediction(String(d)); }}
+                        className={`relative rounded-xl p-2 text-center transition-all border cursor-pointer hover:scale-105 hover:ring-2 hover:ring-primary ${
+                          selectedPrediction === String(d) ? 'ring-2 ring-primary bg-primary/10 border-primary' : 'border-slate-700 bg-slate-800/50'
+                        } ${isHot ? 'bg-rose-500/10 border-rose-500/40' : isWarm ? 'bg-amber-500/10 border-amber-500/40' : ''}`}
+                      >
+                        <div className="font-mono text-xl font-bold">{d}</div>
+                        <div className="text-[10px] text-slate-400">{count} ({pct.toFixed(1)}%)</div>
+                        <div className="h-1 bg-slate-700 rounded-full mt-1 overflow-hidden">
+                          <div className={`h-full rounded-full ${isHot ? 'bg-rose-500' : isWarm ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, pct * 5)}%` }} />
+                        </div>
+                        {isBestMatch && (
+                          <Badge className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0 bg-emerald-500 text-white border-none shadow-lg">Match</Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="text-center text-[10px] text-slate-400 animate-pulse">
+                  🔄 Updating in real-time with each new tick
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Strategic Recommendations */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-3 backdrop-blur-sm">
+                <div className="text-xs text-slate-400">Most Appearing</div>
+                <div className="font-mono text-3xl font-bold text-emerald-400">{mostCommon}</div>
+                <div className="text-[10px] text-slate-500">{percentages[mostCommon]?.toFixed(1)}% frequency</div>
               </div>
-              <div>
-                <label className="text-[9px] text-muted-foreground">Duration</label>
-                <div className="flex gap-1">
-                  <Input type="number" min="1" value={botConfig.duration}
-                    onChange={e => setBotConfig(p => ({ ...p, duration: e.target.value }))} disabled={botRunning} className="h-7 text-xs flex-1" />
-                  <Select value={botConfig.durationUnit} onValueChange={v => setBotConfig(p => ({ ...p, durationUnit: v }))} disabled={botRunning}>
-                    <SelectTrigger className="h-7 text-xs w-16"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="t">T</SelectItem>
-                      <SelectItem value="s">S</SelectItem>
-                      <SelectItem value="m">M</SelectItem>
+              <div className="bg-slate-900/80 border border-rose-500/20 rounded-xl p-3 backdrop-blur-sm">
+                <div className="text-xs text-slate-400">Least Appearing</div>
+                <div className="font-mono text-3xl font-bold text-rose-400">{leastCommon}</div>
+                <div className="text-[10px] text-slate-500">{percentages[leastCommon]?.toFixed(1)}% frequency</div>
+              </div>
+              <div className="bg-slate-900/80 border border-amber-500/20 rounded-xl p-3 backdrop-blur-sm">
+                <div className="text-xs text-slate-400">Even/Odd Bias</div>
+                <div className={`font-mono text-2xl font-bold ${evenPercentage > 50 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {evenPercentage > 50 ? 'EVEN' : 'ODD'}
+                </div>
+                <div className="text-[10px] text-slate-500">{Math.max(evenPercentage, oddPercentage).toFixed(1)}%</div>
+              </div>
+              <div className="bg-slate-900/80 border border-primary/20 rounded-xl p-3 backdrop-blur-sm">
+                <div className="text-xs text-slate-400">Over/Under Bias</div>
+                <div className={`font-mono text-2xl font-bold ${overPercentage > 50 ? 'text-primary' : 'text-amber-400'}`}>
+                  {overPercentage > 50 ? 'OVER' : 'UNDER'}
+                </div>
+                <div className="text-[10px] text-slate-500">{Math.max(overPercentage, underPercentage).toFixed(1)}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Signals + Bot + Last 26 Digits */}
+          <div className="xl:col-span-4 space-y-6">
+            
+            {/* Voice AI Toggle */}
+            <Card className="bg-slate-900/80 border border-primary/30 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-xl">
+                    <Zap className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Ramzfx AI Voice Signals</h3>
+                    {voiceEnabled && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">🔊 AI will announce trade results</p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant={voiceEnabled ? 'default' : 'outline'}
+                  className={`h-8 text-xs ${voiceEnabled ? 'bg-primary shadow-lg' : 'border-slate-700 text-slate-400'}`}
+                  onClick={() => {
+                    setVoiceEnabled(!voiceEnabled);
+                    if (!voiceEnabled) {
+                      const u = new SpeechSynthesisUtterance('Voice signals enabled');
+                      u.rate = 1.1;
+                      window.speechSynthesis?.speak(u);
+                    } else {
+                      window.speechSynthesis?.cancel();
+                    }
+                  }}
+                >
+                  {voiceEnabled ? <Volume2 className="w-3.5 h-3.5 mr-1" /> : <VolumeX className="w-3.5 h-3.5 mr-1" />}
+                  {voiceEnabled ? 'ON' : 'OFF'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Trading Signals Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="bg-slate-900/80 border border-slate-800 rounded-xl">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    {riseSignal.direction === 'Rise' ? <TrendingUp className="w-4 h-4 text-emerald-400" /> : <TrendingDown className="w-4 h-4 text-rose-400" />}
+                    <span className="text-xs font-semibold text-slate-300">Rise/Fall</span>
+                  </div>
+                  <div className={`font-mono text-lg font-bold ${riseSignal.direction === 'Rise' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {riseSignal.direction}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mb-2">RSI: {rsi.toFixed(1)}</div>
+                  <Progress value={riseSignal.confidence} className="h-1.5 bg-slate-700" indicatorClassName={riseSignal.direction === 'Rise' ? 'bg-emerald-500' : 'bg-rose-500'} />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-900/80 border border-slate-800 rounded-xl">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    <Activity className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-slate-300">Even/Odd</span>
+                  </div>
+                  <div className={`font-mono text-lg font-bold ${eoSignal.direction === 'Even' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {eoSignal.direction}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mb-2">{evenPercentage.toFixed(1)}% even</div>
+                  <Progress value={eoSignal.confidence} className="h-1.5 bg-slate-700" indicatorClassName={eoSignal.direction === 'Even' ? 'bg-emerald-500' : 'bg-amber-500'} />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-900/80 border border-slate-800 rounded-xl">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    <ArrowUp className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-slate-300">Over/Under</span>
+                  </div>
+                  <div className={`font-mono text-lg font-bold ${ouSignal.direction === 'Over' ? 'text-primary' : 'text-amber-400'}`}>
+                    {ouSignal.direction}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mb-2">{overPercentage.toFixed(1)}% over</div>
+                  <Progress value={ouSignal.confidence} className="h-1.5 bg-slate-700" indicatorClassName={ouSignal.direction === 'Over' ? 'bg-primary' : 'bg-amber-500'} />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-900/80 border border-slate-800 rounded-xl">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    <Target className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs font-semibold text-slate-300">Match Digit</span>
+                  </div>
+                  <div className="font-mono text-lg font-bold text-emerald-400">Digit {matchSignal.digit}</div>
+                  <div className="text-[10px] text-slate-500 mb-2">{percentages[mostCommon]?.toFixed(1)}%</div>
+                  <Progress value={matchSignal.confidence} className="h-1.5 bg-slate-700" indicatorClassName="bg-emerald-500" />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* AUTO BOT PANEL */}
+            <Card className={`bg-slate-900/80 border rounded-2xl overflow-hidden transition-all duration-300 ${botRunning ? 'border-emerald-500 shadow-emerald-500/20 shadow-xl' : 'border-slate-800'}`}>
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Zap className="w-4 h-4 text-primary" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-white">Milliefx Speed Bot</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant={turboMode ? 'default' : 'outline'}
+                      className={`h-7 text-xs px-3 ${turboMode ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg animate-pulse' : 'border-slate-700 text-slate-400'}`}
+                      onClick={() => setTurboMode(!turboMode)}
+                      disabled={botRunning}
+                    >
+                      <Zap className="w-3.5 h-3.5 mr-1" />
+                      {turboMode ? '⚡ TURBO' : 'Turbo'}
+                    </Button>
+                    {botRunning && (
+                      <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                        <Badge className="text-[10px] bg-emerald-500 text-white">RUNNING</Badge>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400">Market</label>
+                    <Select value={botConfig.botSymbol} onValueChange={handleBotSymbolChange} disabled={botRunning}>
+                      <SelectTrigger className="h-9 text-sm bg-slate-800 border-slate-700 mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
+                        {ALL_MARKETS.map(m => (
+                          <SelectItem key={m.symbol} value={m.symbol}>{m.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Select value={botConfig.contractType} onValueChange={v => setBotConfig(p => ({ ...p, contractType: v }))} disabled={botRunning}>
+                    <SelectTrigger className="h-9 text-sm bg-slate-800 border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {CONTRACT_TYPES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] text-foreground">Martingale</label>
-              <div className="flex items-center gap-2">
-                {botConfig.martingale && (
-                  <Input type="number" min="1.1" step="0.1" value={botConfig.multiplier}
-                    onChange={e => setBotConfig(p => ({ ...p, multiplier: e.target.value }))} disabled={botRunning}
-                    className="h-6 text-[10px] w-14" />
-                )}
-                <button onClick={() => setBotConfig(p => ({ ...p, martingale: !p.martingale }))} disabled={botRunning}
-                  className={`w-9 h-5 rounded-full transition-colors ${botConfig.martingale ? 'bg-primary' : 'bg-muted'} relative`}>
-                  <div className={`w-4 h-4 rounded-full bg-background shadow absolute top-0.5 transition-transform ${botConfig.martingale ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                </button>
-              </div>
-            </div>
-
-            {/* ============================================ */}
-            {/* VIRTUAL HOOK SECTION - NO NOTIFICATIONS */}
-            {/* ============================================ */}
-            <div className="border-t border-border pt-2 mt-1">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[10px] font-semibold text-primary flex items-center gap-1">
-                  <Anchor className="w-3 h-3" /> Virtual Hook
-                </label>
-                <Switch checked={hookEnabled} onCheckedChange={setHookEnabled} disabled={botRunning} />
-              </div>
-
-              {hookEnabled && (
-                <div className="space-y-2 p-2 bg-primary/5 rounded-lg border border-primary/20">
-                  <div className="grid grid-cols-2 gap-2">
+                  {['DIGITMATCH','DIGITDIFF','DIGITOVER','DIGITUNDER'].includes(botConfig.contractType) && (
                     <div>
-                      <label className="text-[8px] text-muted-foreground">Required V-Losses</label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="20"
-                        value={virtualLossCount}
-                        onChange={e => setVirtualLossCount(e.target.value)}
-                        disabled={botRunning}
-                        className="h-7 text-[10px]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[8px] text-muted-foreground">Real Trades (max)</label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={realCount}
-                        onChange={e => setRealCount(e.target.value)}
-                        disabled={botRunning}
-                        className="h-7 text-[10px]"
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Virtual Hook Stats Display */}
-                  <div className="grid grid-cols-3 gap-1 text-center pt-1">
-                    <div className="bg-muted/30 rounded p-1">
-                      <div className="text-[7px] text-muted-foreground">V-Win</div>
-                      <div className="font-mono text-[9px] font-bold text-profit">{vhFakeWins}</div>
-                    </div>
-                    <div className="bg-muted/30 rounded p-1">
-                      <div className="text-[7px] text-muted-foreground">V-Loss</div>
-                      <div className="font-mono text-[9px] font-bold text-loss">{vhFakeLosses}</div>
-                    </div>
-                    <div className="bg-muted/30 rounded p-1">
-                      <div className="text-[7px] text-muted-foreground">Streak</div>
-                      <div className="font-mono text-[9px] font-bold text-warning">{vhConsecLosses}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-[8px] text-muted-foreground text-center">
-                    🎣 Bot will wait for {virtualLossCount} consecutive virtual losses, then enter {realCount} real trade(s)
-                  </div>
-                  
-                  {vhStatus === 'waiting' && botRunning && (
-                    <div className="bg-primary/10 border border-primary/30 rounded p-1 text-[8px] text-primary animate-pulse text-center">
-                      🎣 Waiting for {virtualLossCount} consecutive virtual losses... ({vhConsecLosses}/{virtualLossCount})
-                    </div>
-                  )}
-                  {vhStatus === 'confirmed' && botRunning && (
-                    <div className="bg-profit/10 border border-profit/30 rounded p-1 text-[4px] text-profit text-center animate-pulse">
-                      ✅ Hook confirmed! Executing real trades...
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Strategy Section with Combined Mode */}
-            <div className="border-t border-border pt-2 mt-1">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[10px] font-semibold text-warning flex items-center gap-1">
-                  <Combine className="w-3 h-3" /> Pattern/Digit/Combined Strategy
-                </label>
-                <Switch checked={strategyEnabled} onCheckedChange={setStrategyEnabled} disabled={botRunning} />
-              </div>
-
-              {strategyEnabled && (
-                <div className="space-y-2">
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant={strategyMode === 'pattern' ? 'default' : 'outline'}
-                      className="text-[9px] h-6 px-2 flex-1"
-                      onClick={() => setStrategyMode('pattern')}
-                      disabled={botRunning}
-                    >
-                      Pattern (E/O)
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={strategyMode === 'digit' ? 'default' : 'outline'}
-                      className="text-[9px] h-6 px-2 flex-1"
-                      onClick={() => setStrategyMode('digit')}
-                      disabled={botRunning}
-                    >
-                      Digit Condition 
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={strategyMode === 'combined' ? 'default' : 'outline'}
-                      className="text-[9px] h-6 px-2 flex-1"
-                      onClick={() => setStrategyMode('combined')}
-                      disabled={botRunning}
-                    >
-                      <Combine className="w-2.5 h-2.5 mr-0.5" /> Combined
-                    </Button>
-                  </div>
-
-                  {strategyMode === 'pattern' ? (
-                    <div>
-                      <label className="text-[8px] text-muted-foreground">Pattern (E=Even, O=Odd)</label>
-                      <Textarea
-                        placeholder="e.g., EEEOE or OOEEO"
-                        value={patternInput}
-                        onChange={e => setPatternInput(e.target.value.toUpperCase().replace(/[^EO]/g, ''))}
-                        disabled={botRunning}
-                        className="h-12 text-[10px] font-mono min-h-0 mt-1"
-                      />
-                      <div className={`text-[9px] font-mono mt-1 ${patternValid ? 'text-profit' : 'text-loss'}`}>
-                        {cleanPattern.length === 0 ? 'Enter pattern (min 2 characters)' :
-                          patternValid ? `✓ Pattern: ${cleanPattern}` : `✗ Need at least 2 characters (E/O)`}
+                      <label className="text-xs text-slate-400">Prediction (0-9)</label>
+                      <div className="grid grid-cols-5 gap-1 mt-1">
+                        {Array.from({ length: 10 }, (_, i) => (
+                          <button 
+                            key={i} 
+                            disabled={botRunning} 
+                            onClick={() => setBotConfig(p => ({ ...p, prediction: String(i) }))}
+                            className={`h-8 rounded-lg text-sm font-mono font-bold transition-all ${
+                              botConfig.prediction === String(i) ? 'bg-primary text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                            }`}
+                          >{i}</button>
+                        ))}
                       </div>
                     </div>
-                  ) : strategyMode === 'digit' ? (
-                    <div className="grid grid-cols-3 gap-1">
-                      <div>
-                        <label className="text-[8px] text-muted-foreground">If last </label>
-                        <Input type="number" min="1" max="50" value={digitWindow}
-                          onChange={e => setDigitWindow(e.target.value)} disabled={botRunning}
-                          className="h-7 text-[10px]" />
-                      </div>
-                      <div>
-                        <label className="text-[8px] text-muted-foreground">ticks are </label>
-                        <Select value={digitCondition} onValueChange={setDigitCondition} disabled={botRunning}>
-                          <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {['==', '!=', '>', '<', '>=', '<='].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400">Stake ($)</label>
+                      <Input type="number" min="0.35" step="0.01" value={botConfig.stake}
+                        onChange={e => setBotConfig(p => ({ ...p, stake: e.target.value }))} disabled={botRunning} 
+                        className="h-9 text-sm bg-slate-800 border-slate-700 mt-1" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400">Duration</label>
+                      <div className="flex gap-1 mt-1">
+                        <Input type="number" min="1" value={botConfig.duration}
+                          onChange={e => setBotConfig(p => ({ ...p, duration: e.target.value }))} disabled={botRunning} 
+                          className="h-9 text-sm bg-slate-800 border-slate-700 flex-1" />
+                        <Select value={botConfig.durationUnit} onValueChange={v => setBotConfig(p => ({ ...p, durationUnit: v }))} disabled={botRunning}>
+                          <SelectTrigger className="h-9 text-sm w-20 bg-slate-800 border-slate-700">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            <SelectItem value="t">Ticks</SelectItem>
+                            <SelectItem value="s">Seconds</SelectItem>
+                            <SelectItem value="m">Minutes</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <label className="text-[8px] text-muted-foreground">Digit</label>
-                        <Input type="number" min="0" max="9" value={digitCompare}
-                          onChange={e => setDigitCompare(e.target.value)} disabled={botRunning}
-                          className="h-7 text-[10px]" />
-                      </div>
                     </div>
-                  ) : (
-                    // Combined Strategy UI
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-[8px] text-muted-foreground">Patterns (comma separated)</label>
-                        <Textarea
-                          placeholder="e.g., 11O, 99U, 112, 232, EEEOE, OOEEO, 1O, 2E, 5U"
-                          value={combinedPatterns}
-                          onChange={e => setCombinedPatterns(e.target.value.toUpperCase())}
-                          disabled={botRunning}
-                          className="h-20 text-[10px] font-mono min-h-0 mt-1"
-                        />
-                        <div className="text-[8px] text-muted-foreground mt-1">
-                          Formats: digits(0-9), E/O (Even/Odd), O/U (Over/Under). Example: "11O" means last two digits are 1 and 1, last is Over.
+                  </div>
+
+                  <div className="flex items-center justify-between p-2 bg-slate-800/30 rounded-xl">
+                    <label className="text-sm text-slate-300">Martingale</label>
+                    <div className="flex items-center gap-2">
+                      {botConfig.martingale && (
+                        <Input type="number" min="1.1" step="0.1" value={botConfig.multiplier}
+                          onChange={e => setBotConfig(p => ({ ...p, multiplier: e.target.value }))} disabled={botRunning}
+                          className="h-7 text-xs w-16 bg-slate-800 border-slate-700" />
+                      )}
+                      <button onClick={() => setBotConfig(p => ({ ...p, martingale: !p.martingale }))} disabled={botRunning}
+                        className={`w-10 h-5 rounded-full transition-colors ${botConfig.martingale ? 'bg-primary' : 'bg-slate-700'} relative`}>
+                        <div className={`w-4 h-4 rounded-full bg-white shadow absolute top-0.5 transition-transform ${botConfig.martingale ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Virtual Hook Section */}
+                  <div className="border-t border-slate-800 pt-3 mt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-primary flex items-center gap-1">
+                        <Anchor className="w-3.5 h-3.5" /> Virtual Hook
+                      </label>
+                      <Switch checked={hookEnabled} onCheckedChange={setHookEnabled} disabled={botRunning} className="data-[state=checked]:bg-primary" />
+                    </div>
+
+                    {hookEnabled && (
+                      <div className="space-y-3 p-3 bg-primary/5 rounded-xl border border-primary/20">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] text-slate-400">Required V-Losses</label>
+                            <Input type="number" min="1" max="20" value={virtualLossCount}
+                              onChange={e => setVirtualLossCount(e.target.value)} disabled={botRunning}
+                              className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-slate-400">Real Trades (max)</label>
+                            <Input type="number" min="1" max="10" value={realCount}
+                              onChange={e => setRealCount(e.target.value)} disabled={botRunning}
+                              className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                          </div>
                         </div>
-                        {parsedPatterns.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {parsedPatterns.map((p, idx) => (
-                              <Badge key={idx} variant="outline" className="text-[8px] font-mono">
-                                {combinedPatterns.split(',')[idx].trim()}
-                              </Badge>
-                            ))}
+                        
+                        <div className="grid grid-cols-3 gap-2 text-center pt-2">
+                          <div className="bg-slate-800/50 rounded-lg p-1.5">
+                            <div className="text-[9px] text-slate-400">V-Win</div>
+                            <div className="font-mono text-sm font-bold text-emerald-400">{vhFakeWins}</div>
+                          </div>
+                          <div className="bg-slate-800/50 rounded-lg p-1.5">
+                            <div className="text-[9px] text-slate-400">V-Loss</div>
+                            <div className="font-mono text-sm font-bold text-rose-400">{vhFakeLosses}</div>
+                          </div>
+                          <div className="bg-slate-800/50 rounded-lg p-1.5">
+                            <div className="text-[9px] text-slate-400">Streak</div>
+                            <div className="font-mono text-sm font-bold text-amber-400">{vhConsecLosses}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-[10px] text-slate-400 text-center">
+                          🎣 Bot will wait for {virtualLossCount} consecutive virtual losses, then enter {realCount} real trade(s)
+                        </div>
+                        
+                        {vhStatus === 'waiting' && botRunning && (
+                          <div className="bg-primary/20 border border-primary/40 rounded-lg p-1.5 text-[10px] text-primary animate-pulse text-center">
+                            🎣 Waiting for {virtualLossCount} consecutive virtual losses... ({vhConsecLosses}/{virtualLossCount})
                           </div>
                         )}
-                        {combinedPatterns.length > 0 && parsedPatterns.length === 0 && (
-                          <div className="text-[8px] text-loss mt-1">Invalid patterns. Use digits(0-9), E/O, O/U only.</div>
+                        {vhStatus === 'confirmed' && botRunning && (
+                          <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-lg p-1.5 text-[10px] text-emerald-400 animate-pulse text-center">
+                            ✅ Hook confirmed! Executing real trades...
+                          </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <label className="text-[8px] text-muted-foreground">Match Logic:</label>
-                        <Button
-                          size="sm"
-                          variant={!useOrLogic ? 'default' : 'outline'}
-                          className="text-[8px] h-5 px-2"
-                          onClick={() => setUseOrLogic(false)}
-                          disabled={botRunning}
-                        >
-                          AND (All)
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={useOrLogic ? 'default' : 'outline'}
-                          className="text-[8px] h-5 px-2"
-                          onClick={() => setUseOrLogic(true)}
-                          disabled={botRunning}
-                        >
-                          OR (Any)
-                        </Button>
+                    )}
+                  </div>
+
+                  {/* Strategy Section */}
+                  <div className="border-t border-slate-800 pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-amber-400 flex items-center gap-1">
+                        <Combine className="w-3.5 h-3.5" /> Pattern/Digit/Combined
+                      </label>
+                      <Switch checked={strategyEnabled} onCheckedChange={setStrategyEnabled} disabled={botRunning} className="data-[state=checked]:bg-amber-500" />
+                    </div>
+
+                    {strategyEnabled && (
+                      <div className="space-y-3">
+                        <div className="flex gap-1">
+                          <Button size="sm" variant={strategyMode === 'pattern' ? 'default' : 'outline'}
+                            className={`text-xs h-7 px-2 flex-1 ${strategyMode === 'pattern' ? 'bg-amber-500' : 'border-slate-700 text-slate-400'}`}
+                            onClick={() => setStrategyMode('pattern')} disabled={botRunning}>
+                            Pattern (E/O)
+                          </Button>
+                          <Button size="sm" variant={strategyMode === 'digit' ? 'default' : 'outline'}
+                            className={`text-xs h-7 px-2 flex-1 ${strategyMode === 'digit' ? 'bg-amber-500' : 'border-slate-700 text-slate-400'}`}
+                            onClick={() => setStrategyMode('digit')} disabled={botRunning}>
+                            Digit Condition
+                          </Button>
+                          <Button size="sm" variant={strategyMode === 'combined' ? 'default' : 'outline'}
+                            className={`text-xs h-7 px-2 flex-1 ${strategyMode === 'combined' ? 'bg-amber-500' : 'border-slate-700 text-slate-400'}`}
+                            onClick={() => setStrategyMode('combined')} disabled={botRunning}>
+                            <Combine className="w-3 h-3 mr-1" /> Combined
+                          </Button>
+                        </div>
+
+                        {strategyMode === 'pattern' ? (
+                          <div>
+                            <label className="text-[10px] text-slate-400">Pattern (E=Even, O=Odd)</label>
+                            <Textarea placeholder="e.g., EEEOE or OOEEO" value={patternInput}
+                              onChange={e => setPatternInput(e.target.value.toUpperCase().replace(/[^EO]/g, ''))}
+                              disabled={botRunning} className="h-12 text-xs font-mono bg-slate-800 border-slate-700 mt-1" />
+                            <div className={`text-[10px] font-mono mt-1 ${patternValid ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {cleanPattern.length === 0 ? 'Enter pattern (min 2 characters)' : patternValid ? `✓ Pattern: ${cleanPattern}` : `✗ Need at least 2 characters (E/O)`}
+                            </div>
+                          </div>
+                        ) : strategyMode === 'digit' ? (
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="text-[10px] text-slate-400">If last</label>
+                              <Input type="number" min="1" max="50" value={digitWindow}
+                                onChange={e => setDigitWindow(e.target.value)} disabled={botRunning}
+                                className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400">ticks are</label>
+                              <Select value={digitCondition} onValueChange={setDigitCondition} disabled={botRunning}>
+                                <SelectTrigger className="h-8 text-xs bg-slate-800 border-slate-700 mt-1"><SelectValue /></SelectTrigger>
+                                <SelectContent className="bg-slate-800 border-slate-700">
+                                  {['==', '!=', '>', '<', '>=', '<='].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400">Digit</label>
+                              <Input type="number" min="0" max="9" value={digitCompare}
+                                onChange={e => setDigitCompare(e.target.value)} disabled={botRunning}
+                                className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div>
+                              <label className="text-[10px] text-slate-400">Patterns (comma separated)</label>
+                              <Textarea placeholder="e.g., 11O, 99U, 112, EEEOE, 1O, 5U"
+                                value={combinedPatterns} onChange={e => setCombinedPatterns(e.target.value.toUpperCase())}
+                                disabled={botRunning} className="h-20 text-xs font-mono bg-slate-800 border-slate-700 mt-1" />
+                              <div className="text-[9px] text-slate-500 mt-1">
+                                Formats: digits(0-9), E/O (Even/Odd), O/U (Over/Under).
+                              </div>
+                              {parsedPatterns.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {parsedPatterns.map((_, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-[9px] font-mono border-amber-500/30 text-amber-400">
+                                      {combinedPatterns.split(',')[idx].trim()}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {combinedPatterns.length > 0 && parsedPatterns.length === 0 && (
+                                <div className="text-[9px] text-rose-400 mt-1">Invalid patterns.</div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-[10px] text-slate-400">Match Logic:</label>
+                              <Button size="sm" variant={!useOrLogic ? 'default' : 'outline'}
+                                className={`text-[10px] h-6 px-2 ${!useOrLogic ? 'bg-amber-500' : 'border-slate-700 text-slate-400'}`}
+                                onClick={() => setUseOrLogic(false)} disabled={botRunning}>
+                                AND (All)
+                              </Button>
+                              <Button size="sm" variant={useOrLogic ? 'default' : 'outline'}
+                                className={`text-[10px] h-6 px-2 ${useOrLogic ? 'bg-amber-500' : 'border-slate-700 text-slate-400'}`}
+                                onClick={() => setUseOrLogic(true)} disabled={botRunning}>
+                                OR (Any)
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-[10px] text-slate-400 text-center py-1">
+                          Bot will wait for condition before each trade
+                        </div>
                       </div>
-                      <div className="text-[8px] text-muted-foreground text-center py-1">
-                        {useOrLogic ? 'Any pattern match triggers trade' : 'All patterns must match to trade'}
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] text-slate-400">Stop Loss</label>
+                      <Input type="number" value={botConfig.stopLoss} onChange={e => setBotConfig(p => ({ ...p, stopLoss: e.target.value }))}
+                        disabled={botRunning} className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400">Take Profit</label>
+                      <Input type="number" value={botConfig.takeProfit} onChange={e => setBotConfig(p => ({ ...p, takeProfit: e.target.value }))}
+                        disabled={botRunning} className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400">Max Trades</label>
+                      <Input type="number" value={botConfig.maxTrades} onChange={e => setBotConfig(p => ({ ...p, maxTrades: e.target.value }))}
+                        disabled={botRunning} className="h-8 text-xs bg-slate-800 border-slate-700 mt-1" />
+                    </div>
+                  </div>
+
+                  {botRunning && (
+                    <div className="grid grid-cols-3 gap-2 text-center p-2 bg-slate-800/40 rounded-xl">
+                      <div>
+                        <div className="text-[9px] text-slate-400">Stake</div>
+                        <div className="font-mono text-sm font-bold text-white">${botStats.currentStake.toFixed(2)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] text-slate-400">Streak</div>
+                        <div className="font-mono text-sm font-bold text-rose-400">{botStats.consecutiveLosses}L</div>
+                      </div>
+                      <div className={`${botStats.pnl >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10'} rounded-lg p-1`}>
+                        <div className="text-[9px] text-slate-400">P/L</div>
+                        <div className={`font-mono text-sm font-bold ${botStats.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {botStats.pnl >= 0 ? '+' : ''}{botStats.pnl.toFixed(2)}
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="text-[8px] text-muted-foreground text-center py-1">
-                    Bot will wait for condition before each trade
+                  <div className="flex gap-3">
+                    {!botRunning ? (
+                      <Button onClick={startBot} disabled={!isAuthorized} className="flex-1 h-10 text-sm font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg">
+                        <Play className="w-4 h-4 mr-1" /> Start Bot
+                      </Button>
+                    ) : (
+                      <>
+                        <Button onClick={togglePauseBot} variant="outline" className="flex-1 h-10 text-sm border-slate-700 text-slate-300 bg-slate-800/50">
+                          <Pause className="w-4 h-4 mr-1" /> {botPaused ? 'Resume' : 'Pause'}
+                        </Button>
+                        <Button onClick={stopBot} variant="destructive" className="flex-1 h-10 text-sm">
+                          <StopCircle className="w-4 h-4 mr-1" /> Stop
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-3 gap-1.5">
-              <div>
-                <label className="text-[8px] text-muted-foreground">Stop Loss</label>
-                <Input type="number" value={botConfig.stopLoss} onChange={e => setBotConfig(p => ({ ...p, stopLoss: e.target.value }))}
-                  disabled={botRunning} className="h-7 text-xs" />
-              </div>
-              <div>
-                <label className="text-[8px] text-muted-foreground">Take Profit</label>
-                <Input type="number" value={botConfig.takeProfit} onChange={e => setBotConfig(p => ({ ...p, takeProfit: e.target.value }))}
-                  disabled={botRunning} className="h-7 text-xs" />
-              </div>
-              <div>
-                <label className="text-[8px] text-muted-foreground">Max Trades</label>
-                <Input type="number" value={botConfig.maxTrades} onChange={e => setBotConfig(p => ({ ...p, maxTrades: e.target.value }))}
-                  disabled={botRunning} className="h-7 text-xs" />
-              </div>
-            </div>
-
-            {botRunning && (
-              <div className="grid grid-cols-3 gap-1 text-center">
-                <div className="bg-muted/30 rounded p-1">
-                  <div className="text-[7px] text-muted-foreground">Stake</div>
-                  <div className="font-mono text-[10px] font-bold text-foreground">${botStats.currentStake.toFixed(2)}</div>
-                </div>
-                <div className="bg-muted/30 rounded p-1">
-                  <div className="text-[7px] text-muted-foreground">Streak</div>
-                  <div className="font-mono text-[10px] font-bold text-loss">{botStats.consecutiveLosses}L</div>
-                </div>
-                <div className={`${botStats.pnl >= 0 ? 'bg-profit/10' : 'bg-loss/10'} rounded p-1`}>
-                  <div className="text-[7px] text-muted-foreground">P/L</div>
-                  <div className={`font-mono text-[10px] font-bold ${botStats.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                    {botStats.pnl >= 0 ? '+' : ''}{botStats.pnl.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              {!botRunning ? (
-                <Button onClick={startBot} disabled={!isAuthorized} className="flex-1 h-10 text-xs font-bold bg-profit hover:bg-profit/90 text-profit-foreground">
-                  <Play className="w-4 h-4 mr-1" /> Start Bot
-                </Button>
-              ) : (
-                <>
-                  <Button onClick={togglePauseBot} variant="outline" className="flex-1 h-10 text-xs">
-                    <Pause className="w-3.5 h-3.5 mr-1" /> {botPaused ? 'Resume' : 'Pause'}
-                  </Button>
-                  <Button onClick={stopBot} variant="destructive" className="flex-1 h-10 text-xs">
-                    <StopCircle className="w-3.5 h-3.5 mr-1" /> Stop
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Last 26 Digits - Filtration Chamber with Number Toggle */}
-          <div className="bg-card border border-border rounded-xl p-3">
-            <h3 className="text-xs font-semibold text-foreground mb-2 flex items-center justify-between">
-              <span>Ramzfx Filtration Chamber 🚆</span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-[8px] h-6 px-2"
-                  onClick={() => setShowNumbersInFiltration(!showNumbersInFiltration)}
-                >
-                  {showNumbersInFiltration ? 'Hide Numbers' : 'Show Numbers'}
-                </Button>
-                <Badge variant="outline" className="text-[8px] animate-pulse">
-                  🟢 LIVE
-                </Badge>
-                <Badge className="text-[8px] bg-primary/20 text-primary">
-                  {selectedContractType === 'CALL' ? 'Rise' : 
-                   selectedContractType === 'PUT' ? 'Fall' :
-                   selectedContractType === 'DIGITOVER' ? `Over ${selectedPrediction}` :
-                   selectedContractType === 'DIGITUNDER' ? `Under ${selectedPrediction}` :
-                   selectedContractType === 'DIGITEVEN' ? 'Even' :
-                   selectedContractType === 'DIGITODD' ? 'Odd' :
-                   selectedContractType === 'DIGITMATCH' ? `Match ${selectedPrediction}` :
-                   selectedContractType === 'DIGITDIFF' ? `Diff ${selectedPrediction}` : selectedContractType}
-                </Badge>
-              </div>
-            </h3>
-            
-            {/* Legend */}
-            <div className="flex flex-wrap gap-3 mb-3 text-[8px] justify-center">
-              {legend.symbol1 && (
-                <div className="flex items-center gap-1">
-                  <div className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold ${
-                    legend.symbol1 === 'R' ? 'bg-profit/20 text-profit' :
-                    legend.symbol1 === 'F' ? 'bg-loss/20 text-loss' :
-                    legend.symbol1 === 'O' ? 'bg-loss/20 text-loss' :
-                    legend.symbol1 === 'U' ? 'bg-profit/20 text-profit' :
-                    legend.symbol1 === 'S' ? 'bg-primary/20 text-primary' :
-                    legend.symbol1 === 'E' ? 'bg-[#3FB950]/20 text-[#3FB950]' :
-                    'bg-muted/20 text-foreground'
-                  }`}>
-                    {legend.symbol1}
-                  </div>
-                  <span className="text-muted-foreground">{legend.meaning1}</span>
-                </div>
-              )}
-              {legend.symbol2 && (
-                <div className="flex items-center gap-1">
-                  <div className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold ${
-                    legend.symbol2 === 'R' ? 'bg-profit/20 text-profit' :
-                    legend.symbol2 === 'F' ? 'bg-loss/20 text-loss' :
-                    legend.symbol2 === 'O' ? 'bg-loss/20 text-loss' :
-                    legend.symbol2 === 'U' ? 'bg-profit/20 text-profit' :
-                    legend.symbol2 === 'S' ? 'bg-primary/20 text-primary' :
-                    legend.symbol2 === 'E' ? 'bg-[#3FB950]/20 text-[#3FB950]' :
-                    'bg-muted/20 text-foreground'
-                  }`}>
-                    {legend.symbol2}
-                  </div>
-                  <span className="text-muted-foreground">{legend.meaning2}</span>
-                </div>
-              )}
-              {legend.symbol3 && (
-                <div className="flex items-center gap-1">
-                  <div className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold ${
-                    legend.symbol3 === 'R' ? 'bg-profit/20 text-profit' :
-                    legend.symbol3 === 'F' ? 'bg-loss/20 text-loss' :
-                    legend.symbol3 === 'O' ? 'bg-loss/20 text-loss' :
-                    legend.symbol3 === 'U' ? 'bg-profit/20 text-profit' :
-                    legend.symbol3 === 'S' ? 'bg-primary/20 text-primary' :
-                    legend.symbol3 === 'E' ? 'bg-[#3FB950]/20 text-[#3FB950]' :
-                    'bg-muted/20 text-foreground'
-                  }`}>
-                    {legend.symbol3}
-                  </div>
-                  <span className="text-muted-foreground">{legend.meaning3}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Analysis Mode Selector */}
-            <div className="mb-3 pt-1 border-t border-border">
-              <div className="flex items-center gap-2">
-                <label className="text-[9px] text-muted-foreground whitespace-nowrap">Mode:</label>
-                <Select value={selectedContractType} onValueChange={(value) => {
-                  setSelectedContractType(value);
-                  setTimeout(() => updateDisplaySymbols(), 0);
-                }}>
-                  <SelectTrigger className="h-6 text-[10px] flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONTRACT_TYPES.map(c => (
-                      <SelectItem key={c.value} value={c.value} className="text-[10px]">
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {['DIGITMATCH', 'DIGITDIFF', 'DIGITOVER', 'DIGITUNDER'].includes(selectedContractType) && (
-                <div className="flex items-center gap-2 mt-2">
-                  <label className="text-[9px] text-muted-foreground whitespace-nowrap">Digit:</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="9"
-                    value={selectedPrediction}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 9)) {
-                        setSelectedPrediction(val);
-                        setTimeout(() => updateDisplaySymbols(), 0);
-                      }
-                    }}
-                    className="h-6 text-[10px] w-12 text-center"
-                  />
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-1 flex-wrap justify-center">
-              {displaySymbols.length > 0 ? (
-                displaySymbols.map((symbol, i) => {
-                  const isLast = i === displaySymbols.length - 1;
-                  const actualDigit = digitStats.last26Digits[i];
-                  const actualDigitForOverUnder = actualDigit !== undefined ? actualDigit : -1;
-                  
-                  let bgColor = '';
-                  let textColor = '';
-                  
-                  // Color mapping based on symbol meaning with Over/Under special handling when showing numbers
-                  if (showNumbersInFiltration && actualDigitForOverUnder !== -1) {
-                    // Show numbers mode: Over digits (5-9) green, Under digits (0-4) red, other specials stay consistent
-                    if (actualDigitForOverUnder > 4) {
-                      bgColor = 'bg-profit/30';
-                      textColor = 'text-profit';
-                    } else {
-                      bgColor = 'bg-loss/30';
-                      textColor = 'text-loss';
-                    }
-                  } else {
-                    // Normal symbol mode
-                    if (symbol === 'R' || symbol === 'U') {
-                      bgColor = 'bg-profit/20';
-                      textColor = 'text-profit';
-                    } else if (symbol === 'F' || symbol === 'O') {
-                      bgColor = 'bg-loss/20';
-                      textColor = 'text-loss';
-                    } else if (symbol === 'E') {
-                      bgColor = 'bg-[#3FB950]/20';
-                      textColor = 'text-[#3FB950]';
-                    } else if (symbol === 'S') {
-                      bgColor = 'bg-primary/20';
-                      textColor = 'text-primary';
-                    } else if (symbol === 'D') {
-                      bgColor = 'bg-[#D29922]/20';
-                      textColor = 'text-[#D29922]';
-                    } else if (symbol === 'C') {
-                      bgColor = 'bg-[#58A6FF]/20';
-                      textColor = 'text-[#58A6FF]';
-                    } else {
-                      bgColor = 'bg-muted/20';
-                      textColor = 'text-foreground';
-                    }
-                  }
-                  
-                  // Display either symbol or the actual digit
-                  const displayValue = showNumbersInFiltration && actualDigitForOverUnder !== -1 
-                    ? actualDigitForOverUnder.toString() 
-                    : symbol;
-                  
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={isLast ? { scale: 0.8 } : {}}
-                      animate={isLast ? { scale: [1, 1.2, 1] } : {}}
-                      transition={isLast ? { duration: 0.5 } : {}}
-                      className={`w-7 h-9 rounded-lg flex items-center justify-center font-mono font-bold text-sm border-2 transition-all ${
-                        isLast ? 'w-9 h-11 text-base ring-2 ring-primary' : ''
-                      } ${bgColor} ${textColor} ${
-                        isLast ? 'border-primary' : 
-                        symbol === 'R' || symbol === 'U' ? 'border-profit/30' :
-                        symbol === 'F' || symbol === 'O' ? 'border-loss/30' :
-                        symbol === 'E' ? 'border-[#3FB950]/30' :
-                        symbol === 'S' ? 'border-primary/30' :
-                        symbol === 'D' ? 'border-[#D29922]/30' :
-                        'border-border'
-                      }`}
-                    >
-                      {displayValue}
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <div className="text-center text-xs text-muted-foreground py-4">
-                  Waiting for tick data...
-                </div>
-              )}
-            </div>
-            <div className="text-center text-[8px] text-muted-foreground mt-2">
-              🔄 Updates with every tick • Latest digit highlighted
-              {showNumbersInFiltration && " • Over (5-9) Green | Under (0-4) Red"}
-            </div>
-          </div>
-
-          {/* Bot Progress */}
-          <div className="bg-card border border-border rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <Trophy className="w-3.5 h-3.5 text-primary" /> Trade Results 
-              </h3>
-              {tradeHistory.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-6 text-[9px] text-muted-foreground hover:text-loss"
-                  onClick={() => { setTradeHistory([]); setBotStats({ trades: 0, wins: 0, losses: 0, pnl: 0, currentStake: 0, consecutiveLosses: 0 }); }}>
-                  Clear
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              <div className="bg-muted/30 rounded-lg p-1.5 text-center">
-                <div className="text-[8px] text-muted-foreground">Trades</div>
-                <div className="font-mono text-sm font-bold text-foreground">{totalTrades}</div>
-              </div>
-              <div className="bg-profit/10 rounded-lg p-1.5 text-center">
-                <div className="text-[8px] text-profit">Wins</div>
-                <div className="font-mono text-sm font-bold text-profit">{winsCount}</div>
-              </div>
-              <div className="bg-loss/10 rounded-lg p-1.5 text-center">
-                <div className="text-[8px] text-loss">Losses</div>
-                <div className="font-mono text-sm font-bold text-loss">{lossesCount}</div>
-              </div>
-              <div className={`${totalProfit >= 0 ? 'bg-profit/10' : 'bg-loss/10'} rounded-lg p-1.5 text-center`}>
-                <div className="text-[8px] text-muted-foreground">P/L</div>
-                <div className={`font-mono text-sm font-bold ${totalProfit >= 0 ? 'text-profit' : 'text-loss'}`}>
-                  {totalProfit >= 0 ? '+' : ''}{totalProfit.toFixed(2)}
-                </div>
-              </div>
-            </div>
-            {totalTrades > 0 && (
-              <div>
-                <div className="flex justify-between text-[9px] text-muted-foreground mb-0.5">
-                  <span>Win Rate</span>
-                  <span className="font-mono font-bold">{winRate.toFixed(1)}%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-profit rounded-full" style={{ width: `${winRate}%` }} />
-                </div>
-              </div>
-            )}
-
-            {/* Trade History - All trades visible, no limit */}
-            {tradeHistory.length > 0 && (
-              <div className="max-h-60 overflow-auto space-y-1">
-                {tradeHistory.map(t => {
-                  const outcomeSymbol = getOutcomeSymbol(t);
-                  const outcomeColor = t.status === 'won' ? 'text-profit' : 'text-loss';
-                  
-                  let badgeColor = '';
-                  if (outcomeSymbol === 'R' || outcomeSymbol === 'U') badgeColor = 'border-profit text-profit';
-                  else if (outcomeSymbol === 'F' || outcomeSymbol === 'O') badgeColor = 'border-loss text-loss';
-                  else if (outcomeSymbol === 'S') badgeColor = 'border-primary text-primary';
-                  else if (outcomeSymbol === 'D') badgeColor = 'border-[#D29922] text-[#D29922]';
-                  else if (outcomeSymbol === 'E') badgeColor = 'border-[#3FB950] text-[#3FB950]';
-                  
-                  // Enhanced styling for virtual trades
-                  const isVirtualTrade = t.isVirtual === true;
-                  const virtualStatusClass = isVirtualTrade
-                    ? t.status === 'won'
-                      ? 'bg-gradient-to-r from-green-950/40 to-emerald-950/30 border-green-500/50'
-                      : 'bg-gradient-to-r from-red-950/40 to-rose-950/30 border-red-500/50'
-                    : '';
-                  
-                  return (
-                    <div key={t.id} className={`flex items-center justify-between text-[9px] p-1.5 rounded-lg border ${
-                      t.status === 'open' ? 'border-primary/30 bg-primary/5' :
-                      t.status === 'won' ? 'border-profit/30 bg-profit/5' :
-                      'border-loss/30 bg-loss/5'
-                    } ${virtualStatusClass} ${isVirtualTrade ? 'border-dashed' : ''}`}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold ${t.status === 'won' ? 'text-profit' : t.status === 'lost' ? 'text-loss' : 'text-primary'}`}>
-                          {t.status === 'open' ? '⏳' : t.status === 'won' ? '✅' : '❌'}
-                        </span>
-                        {isVirtualTrade && (
-                          <Badge variant="outline" className="text-[6px] px-1 py-0 bg-purple-500/30 text-purple-400 border-purple-500/50">
-                            VIRTUAL
-                          </Badge>
-                        )}
-                        <span className="font-mono text-muted-foreground">{t.type}</span>
-                        {!isVirtualTrade && t.stake > 0 && (
-                          <span className="text-muted-foreground">${t.stake.toFixed(2)}</span>
-                        )}
-                        {isVirtualTrade && (
-                          <span className="text-purple-400/70 text-[8px] font-mono">
-                            {t.virtualLossCount !== undefined && t.virtualRequired !== undefined 
-                              ? `(${t.virtualLossCount}/${t.virtualRequired})` 
-                              : '(virtual)'}
-                          </span>
-                        )}
-                        {t.resultDigit !== undefined && (
-                          <Badge variant="outline" className={`text-[8px] px-1 ${t.status === 'won' ? 'border-profit text-profit' : 'border-loss text-loss'}`}>
-                            {t.resultDigit}
-                          </Badge>
-                        )}
-                        {outcomeSymbol && t.status !== 'open' && (
-                          <Badge variant="outline" className={`text-[8px] px-1 font-mono ${badgeColor}`}>
-                            {outcomeSymbol}
-                          </Badge>
-                        )}
-                      </div>
-                      <span className={`font-mono font-bold ${isVirtualTrade ? (t.status === 'won' ? 'text-green-400' : 'text-red-400') : (t.profit >= 0 ? 'text-profit' : 'text-loss')}`}>
-                        {t.status === 'open' ? '...' : isVirtualTrade ? (t.status === 'won' ? 'WIN' : 'LOSS') : `${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)}`}
-                      </span>
+            {/* Filtration Chamber */}
+            <Card className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Target className="w-4 h-4 text-primary" />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    <h3 className="text-sm font-semibold text-white">Ramzfx Filtration Chamber 🚆</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="h-7 text-xs border-slate-700"
+                      onClick={() => setShowNumbersInFiltration(!showNumbersInFiltration)}>
+                      {showNumbersInFiltration ? 'Hide Numbers' : 'Show Numbers'}
+                    </Button>
+                    <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-400 animate-pulse">🟢 LIVE</Badge>
+                    <Badge className="text-[10px] bg-primary/20 text-primary px-2 py-0.5">
+                      {selectedContractType === 'CALL' ? 'Rise' : 
+                       selectedContractType === 'PUT' ? 'Fall' :
+                       selectedContractType === 'DIGITOVER' ? `Over ${selectedPrediction}` :
+                       selectedContractType === 'DIGITUNDER' ? `Under ${selectedPrediction}` :
+                       selectedContractType === 'DIGITEVEN' ? 'Even' :
+                       selectedContractType === 'DIGITODD' ? 'Odd' :
+                       selectedContractType === 'DIGITMATCH' ? `Match ${selectedPrediction}` :
+                       selectedContractType === 'DIGITDIFF' ? `Diff ${selectedPrediction}` : selectedContractType}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-3 mb-2 text-[10px] justify-center">
+                  {legend.symbol1 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold ${
+                        legend.symbol1 === 'R' ? 'bg-emerald-500/20 text-emerald-400' :
+                        legend.symbol1 === 'F' ? 'bg-rose-500/20 text-rose-400' :
+                        legend.symbol1 === 'O' ? 'bg-rose-500/20 text-rose-400' :
+                        legend.symbol1 === 'U' ? 'bg-emerald-500/20 text-emerald-400' :
+                        legend.symbol1 === 'S' ? 'bg-primary/20 text-primary' :
+                        legend.symbol1 === 'E' ? 'bg-emerald-500/20 text-emerald-400' :
+                        'bg-slate-700/50 text-slate-300'
+                      }`}>
+                        {legend.symbol1}
+                      </div>
+                      <span className="text-slate-400">{legend.meaning1}</span>
+                    </div>
+                  )}
+                  {legend.symbol2 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold ${
+                        legend.symbol2 === 'R' ? 'bg-emerald-500/20 text-emerald-400' :
+                        legend.symbol2 === 'F' ? 'bg-rose-500/20 text-rose-400' :
+                        legend.symbol2 === 'O' ? 'bg-rose-500/20 text-rose-400' :
+                        legend.symbol2 === 'U' ? 'bg-emerald-500/20 text-emerald-400' :
+                        legend.symbol2 === 'S' ? 'bg-primary/20 text-primary' :
+                        legend.symbol2 === 'E' ? 'bg-emerald-500/20 text-emerald-400' :
+                        'bg-slate-700/50 text-slate-300'
+                      }`}>
+                        {legend.symbol2}
+                      </div>
+                      <span className="text-slate-400">{legend.meaning2}</span>
+                    </div>
+                  )}
+                  {legend.symbol3 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold ${
+                        legend.symbol3 === 'R' ? 'bg-emerald-500/20 text-emerald-400' :
+                        legend.symbol3 === 'F' ? 'bg-rose-500/20 text-rose-400' :
+                        legend.symbol3 === 'O' ? 'bg-rose-500/20 text-rose-400' :
+                        legend.symbol3 === 'U' ? 'bg-emerald-500/20 text-emerald-400' :
+                        legend.symbol3 === 'S' ? 'bg-primary/20 text-primary' :
+                        legend.symbol3 === 'E' ? 'bg-emerald-500/20 text-emerald-400' :
+                        'bg-slate-700/50 text-slate-300'
+                      }`}>
+                        {legend.symbol3}
+                      </div>
+                      <span className="text-slate-400">{legend.meaning3}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="border-t border-slate-800 pt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="text-xs text-slate-400 whitespace-nowrap">Analysis Mode:</label>
+                    <Select value={selectedContractType} onValueChange={(value) => {
+                      setSelectedContractType(value);
+                      setTimeout(() => updateDisplaySymbols(), 0);
+                    }}>
+                      <SelectTrigger className="h-7 text-xs flex-1 bg-slate-800 border-slate-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {CONTRACT_TYPES.map(c => (
+                          <SelectItem key={c.value} value={c.value} className="text-xs">{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {['DIGITMATCH', 'DIGITDIFF', 'DIGITOVER', 'DIGITUNDER'].includes(selectedContractType) && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <label className="text-xs text-slate-400 whitespace-nowrap">Digit:</label>
+                      <Input type="number" min="0" max="9" value={selectedPrediction}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 9)) {
+                            setSelectedPrediction(val);
+                            setTimeout(() => updateDisplaySymbols(), 0);
+                          }
+                        }}
+                        className="h-7 text-sm w-16 text-center bg-slate-800 border-slate-700" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-1 flex-wrap justify-center pt-2">
+                  {displaySymbols.length > 0 ? (
+                    displaySymbols.map((symbol, i) => {
+                      const isLast = i === displaySymbols.length - 1;
+                      const actualDigit = digitStats.last26Digits[i];
+                      let bgColor = 'bg-slate-800/50';
+                      let textColor = 'text-slate-300';
+                      
+                      if (showNumbersInFiltration && actualDigit !== undefined) {
+                        if (actualDigit > 4) {
+                          bgColor = 'bg-emerald-500/20';
+                          textColor = 'text-emerald-400';
+                        } else {
+                          bgColor = 'bg-rose-500/20';
+                          textColor = 'text-rose-400';
+                        }
+                      } else {
+                        if (symbol === 'R' || symbol === 'U') { bgColor = 'bg-emerald-500/20'; textColor = 'text-emerald-400'; }
+                        else if (symbol === 'F' || symbol === 'O') { bgColor = 'bg-rose-500/20'; textColor = 'text-rose-400'; }
+                        else if (symbol === 'E') { bgColor = 'bg-emerald-500/20'; textColor = 'text-emerald-400'; }
+                        else if (symbol === 'S') { bgColor = 'bg-primary/20'; textColor = 'text-primary'; }
+                        else if (symbol === 'D') { bgColor = 'bg-amber-500/20'; textColor = 'text-amber-400'; }
+                        else if (symbol === 'C') { bgColor = 'bg-sky-500/20'; textColor = 'text-sky-400'; }
+                      }
+                      
+                      const displayValue = showNumbersInFiltration && actualDigit !== undefined ? actualDigit.toString() : symbol;
+                      
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={isLast ? { scale: 0.8 } : {}}
+                          animate={isLast ? { scale: [1, 1.15, 1] } : {}}
+                          transition={isLast ? { duration: 0.4 } : {}}
+                          className={`w-8 h-10 rounded-xl flex items-center justify-center font-mono font-bold text-base border-2 transition-all ${
+                            isLast ? 'w-10 h-12 text-lg ring-2 ring-primary border-primary' : `border-transparent ${bgColor}`
+                          } ${textColor}`}
+                        >
+                          {displayValue}
+                        </motion.div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center text-sm text-slate-500 py-6">Waiting for tick data...</div>
+                  )}
+                </div>
+                <div className="text-center text-[10px] text-slate-500 mt-2">
+                  🔄 Updates with every tick • Latest digit highlighted
+                  {showNumbersInFiltration && " • Over (5-9) Green | Under (0-4) Red"}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Technical Status */}
-          <div className="bg-card border border-border rounded-xl p-3 space-y-2">
-            <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-              <ShieldAlert className="w-3.5 h-3.5 text-primary" /> Technical Status
-            </h3>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">RSI (14)</span>
-                <span className={`font-mono font-bold ${rsi > 70 ? 'text-loss' : rsi < 30 ? 'text-profit' : 'text-foreground'}`}>
-                  {rsi.toFixed(1)} {rsi > 70 ? '🔴 Overbought' : rsi < 30 ? '🟢 Oversold' : '⚪ Neutral'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">MACD</span>
-                <span className={`font-mono font-bold ${macd.macd > 0 ? 'text-profit' : 'text-loss'}`}>
-                  {macd.macd.toFixed(4)} {macd.macd > 0 ? '📈 Bullish' : '📉 Bearish'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">EMA 50</span>
-                <span className={`font-mono font-bold ${currentPrice > (ema50[ema50.length - 1] || 0) ? 'text-profit' : 'text-loss'}`}>
-                  {currentPrice > (ema50[ema50.length - 1] || 0) ? '📈 Above' : '📉 Below'} ({(ema50[ema50.length - 1] || 0).toFixed(2)})
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">BB Position</span>
-                <span className="font-mono font-bold text-[#BC8CFF]">{bbPosition.toFixed(1)}%</span>
-              </div>
-              <div className="h-1.5 bg-muted rounded-full">
-                <div className="h-full bg-[#BC8CFF] rounded-full" style={{ width: `${Math.min(100, Math.max(0, bbPosition))}%` }} />
-              </div>
-            </div>
+            {/* Trade Results */}
+            <Card className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-white">Trade Results</h3>
+                  </div>
+                  {tradeHistory.length > 0 && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-400 hover:text-rose-400"
+                      onClick={() => { setTradeHistory([]); setBotStats({ trades: 0, wins: 0, losses: 0, pnl: 0, currentStake: 0, consecutiveLosses: 0 }); }}>
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="bg-slate-800/40 rounded-xl p-2 text-center">
+                    <div className="text-[10px] text-slate-400">Trades</div>
+                    <div className="font-mono text-xl font-bold text-white">{totalTrades}</div>
+                  </div>
+                  <div className="bg-emerald-500/10 rounded-xl p-2 text-center">
+                    <div className="text-[10px] text-emerald-400">Wins</div>
+                    <div className="font-mono text-xl font-bold text-emerald-400">{winsCount}</div>
+                  </div>
+                  <div className="bg-rose-500/10 rounded-xl p-2 text-center">
+                    <div className="text-[10px] text-rose-400">Losses</div>
+                    <div className="font-mono text-xl font-bold text-rose-400">{lossesCount}</div>
+                  </div>
+                  <div className={`${totalProfit >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10'} rounded-xl p-2 text-center`}>
+                    <div className="text-[10px] text-slate-400">P/L</div>
+                    <div className={`font-mono text-xl font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {totalProfit >= 0 ? '+' : ''}{totalProfit.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                {totalTrades > 0 && (
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                      <span>Win Rate</span>
+                      <span className="font-mono font-bold text-white">{winRate.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={winRate} className="h-1.5 bg-slate-700" indicatorClassName="bg-emerald-500" />
+                  </div>
+                )}
+
+                {tradeHistory.length > 0 && (
+                  <div className="max-h-64 overflow-y-auto space-y-1.5 custom-scrollbar">
+                    {tradeHistory.map(t => {
+                      const outcomeSymbol = getOutcomeSymbol(t);
+                      let badgeColor = '';
+                      if (outcomeSymbol === 'R' || outcomeSymbol === 'U') badgeColor = 'border-emerald-500/30 text-emerald-400';
+                      else if (outcomeSymbol === 'F' || outcomeSymbol === 'O') badgeColor = 'border-rose-500/30 text-rose-400';
+                      else if (outcomeSymbol === 'S') badgeColor = 'border-primary/30 text-primary';
+                      else if (outcomeSymbol === 'D') badgeColor = 'border-amber-500/30 text-amber-400';
+                      else if (outcomeSymbol === 'E') badgeColor = 'border-emerald-500/30 text-emerald-400';
+                      
+                      const isVirtualTrade = t.isVirtual === true;
+                      
+                      return (
+                        <div key={t.id} className={`flex items-center justify-between text-[10px] p-2 rounded-xl border ${
+                          t.status === 'open' ? 'border-primary/30 bg-primary/5' :
+                          t.status === 'won' ? 'border-emerald-500/30 bg-emerald-500/5' :
+                          'border-rose-500/30 bg-rose-500/5'
+                        } ${isVirtualTrade ? 'border-dashed bg-purple-500/5 border-purple-500/30' : ''}`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`font-bold ${t.status === 'won' ? 'text-emerald-400' : t.status === 'lost' ? 'text-rose-400' : 'text-primary'}`}>
+                              {t.status === 'open' ? '⏳' : t.status === 'won' ? '✅' : '❌'}
+                            </span>
+                            {isVirtualTrade && (
+                              <Badge variant="outline" className="text-[8px] px-1.5 py-0 bg-purple-500/20 text-purple-400 border-purple-500/30">VIRTUAL</Badge>
+                            )}
+                            <span className="font-mono text-slate-300">{t.type}</span>
+                            {!isVirtualTrade && t.stake > 0 && <span className="text-slate-400">${t.stake.toFixed(2)}</span>}
+                            {isVirtualTrade && t.virtualLossCount !== undefined && t.virtualRequired !== undefined && (
+                              <span className="text-purple-400/70 text-[9px] font-mono">({t.virtualLossCount}/{t.virtualRequired})</span>
+                            )}
+                            {t.resultDigit !== undefined && (
+                              <Badge variant="outline" className={`text-[9px] px-1.5 ${t.status === 'won' ? 'border-emerald-500/30 text-emerald-400' : 'border-rose-500/30 text-rose-400'}`}>
+                                {t.resultDigit}
+                              </Badge>
+                            )}
+                            {outcomeSymbol && t.status !== 'open' && (
+                              <Badge variant="outline" className={`text-[9px] px-1.5 font-mono ${badgeColor}`}>
+                                {outcomeSymbol}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className={`font-mono font-bold ${isVirtualTrade ? (t.status === 'won' ? 'text-emerald-400' : 'text-rose-400') : (t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400')}`}>
+                            {t.status === 'open' ? '...' : isVirtualTrade ? (t.status === 'won' ? 'WIN' : 'LOSS') : `${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)}`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Technical Status */}
+            <Card className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-white">Technical Status</h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">RSI (14)</span>
+                    <span className={`font-mono font-bold ${rsi > 70 ? 'text-rose-400' : rsi < 30 ? 'text-emerald-400' : 'text-white'}`}>
+                      {rsi.toFixed(1)} {rsi > 70 ? '🔴 Overbought' : rsi < 30 ? '🟢 Oversold' : '⚪ Neutral'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">MACD</span>
+                    <span className={`font-mono font-bold ${macd.macd > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {macd.macd.toFixed(4)} {macd.macd > 0 ? '📈 Bullish' : '📉 Bearish'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">EMA 50</span>
+                    <span className={`font-mono font-bold ${currentPrice > (ema50[ema50.length - 1] || 0) ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {currentPrice > (ema50[ema50.length - 1] || 0) ? '📈 Above' : '📉 Below'} ({(ema50[ema50.length - 1] || 0).toFixed(2)})
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">BB Position</span>
+                    <span className="font-mono font-bold text-purple-400">{bbPosition.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={Math.min(100, Math.max(0, bbPosition))} className="h-1.5 bg-slate-700" indicatorClassName="bg-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
+
+      {/* Add custom scrollbar styles if needed */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #0f172a;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #334155;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #475569;
+        }
+      `}</style>
     </div>
   );
 }
