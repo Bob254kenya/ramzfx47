@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
@@ -208,6 +206,7 @@ export default function TradingBot() {
   
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const runningRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // ============================================
   // HELPER FUNCTIONS
@@ -240,6 +239,18 @@ export default function TradingBot() {
         worstStreak: Math.min(prev.worstStreak, newStreak)
       };
     });
+  }, []);
+  
+  const stopBot = useCallback(() => {
+    setIsBotRunning(false);
+    setIsBotPaused(false);
+    runningRef.current = false;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setCurrentPrediction(null);
+    toast.info('Bot stopped');
   }, []);
   
   const executeTrade = useCallback(async (prediction: string) => {
@@ -303,7 +314,7 @@ export default function TradingBot() {
   }, [balance, marketSimulator, stats.currentStake, stats.currentStreak, botConfig.strategy, botConfig.baseStake, botConfig.maxStake, updateStats]);
   
   const runBotIteration = useCallback(async () => {
-    if (!isBotRunning || isBotPaused) return;
+    if (!runningRef.current || isBotPaused) return;
     
     // Check stop loss / take profit
     if (stats.totalProfit <= -botConfig.stopLoss) {
@@ -365,12 +376,12 @@ export default function TradingBot() {
     }
     
     // Wait before next trade
-    setTimeout(() => {
-      if (runningRef.current && !isBotPaused) {
+    if (runningRef.current && !isBotPaused) {
+      timeoutRef.current = setTimeout(() => {
         runBotIteration();
-      }
-    }, botConfig.delayBetweenTrades);
-  }, [isBotRunning, isBotPaused, stats, botConfig, recentDigits, executeTrade, stopBot]);
+      }, botConfig.delayBetweenTrades);
+    }
+  }, [isBotPaused, stats, botConfig, recentDigits, executeTrade, stopBot]);
   
   const startBot = useCallback(() => {
     if (stats.totalProfit <= -botConfig.stopLoss) {
@@ -387,22 +398,20 @@ export default function TradingBot() {
   
   const pauseBot = useCallback(() => {
     setIsBotPaused(true);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     toast.info('Bot paused');
   }, []);
   
   const resumeBot = useCallback(() => {
+    if (!isBotRunning) return;
     setIsBotPaused(false);
+    runningRef.current = true;
     toast.success('Bot resumed');
     runBotIteration();
-  }, [runBotIteration]);
-  
-  const stopBot = useCallback(() => {
-    setIsBotRunning(false);
-    setIsBotPaused(false);
-    runningRef.current = false;
-    setCurrentPrediction(null);
-    toast.info('Bot stopped');
-  }, []);
+  }, [isBotRunning, runBotIteration]);
   
   const resetBot = useCallback(() => {
     stopBot();
@@ -427,8 +436,8 @@ export default function TradingBot() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (botIntervalRef.current) {
-        clearInterval(botIntervalRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
       runningRef.current = false;
     };
@@ -811,7 +820,7 @@ export default function TradingBot() {
                   <p>• Bot uses mean reversion for predictions</p>
                   <p>• Stop Loss: ${botConfig.stopLoss} | Take Profit: ${botConfig.takeProfit}</p>
                   <p className="text-yellow-500/70 text-[10px] mt-2">
-                    ⚠️ Educational purposes only. No strategy guarantees profits.
+                     Educational purposes only. 
                   </p>
                 </div>
               </div>
