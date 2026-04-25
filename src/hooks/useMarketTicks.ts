@@ -30,7 +30,7 @@ export function useMarketTicks(symbol: MarketSymbol, maxTicks: number = 100) {
       // Get history first
       const history = await derivApi.getTickHistory(symbol, maxTicks);
       const prices = history.history.prices;
-      const digits = prices.map(getLastDigit);
+      const digits = prices.map(price => getLastDigit(price, symbol));
       
       setState({
         prices,
@@ -45,8 +45,7 @@ export function useMarketTicks(symbol: MarketSymbol, maxTicks: number = 100) {
       await derivApi.subscribeTicks(symbol, (data) => {
         if (data.tick) {
           const price = data.tick.quote;
-          // FIX: getLastDigit returns 0-9; no truthy guard needed
-          const digit = getLastDigit(price);
+          const digit = getLastDigit(price, symbol);
 
           setState(prev => {
             const newPrices = [...prev.prices, price].slice(-maxTicks);
