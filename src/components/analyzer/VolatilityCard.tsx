@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Activity, Zap, BarChart3, ArrowUpDown } from 'lucide-react';
+import { getLastDigit } from '@/services/analysis';
 
 interface VolatilityCardProps {
   symbol: string;
@@ -14,16 +15,6 @@ interface Pattern {
   digits: number[];
   length: number;
   frequency: number;
-}
-
-/**
- * Extracts last digit from a price using Deriv-standard method
- */
-function extractDigit(price: number): number {
-  const fixed = parseFloat(String(price)).toFixed(2);
-  const d = parseInt(fixed.slice(-1), 10);
-  if (Number.isNaN(d) || d < 0 || d > 9) return 0;
-  return d;
 }
 
 export default function VolatilityCard({ 
@@ -78,14 +69,14 @@ export default function VolatilityCard({
 
         if (data.history) {
           const prices: number[] = data.history.prices || [];
-          const extracted = prices.map(extractDigit);
+          const extracted = prices.map(price => getLastDigit(price, symbol));
           digitsRef.current = extracted;
           setDigits([...extracted]);
         }
 
         if (data.tick) {
           const price = parseFloat(data.tick.quote);
-          const digit = extractDigit(price);
+          const digit = getLastDigit(price, data.tick.symbol);
           if (digit >= 0 && digit <= 9) {
             digitsRef.current.push(digit);
             if (digitsRef.current.length > 4000) digitsRef.current.shift();
@@ -621,4 +612,4 @@ export default function VolatilityCard({
       )}
     </motion.div>
   );
-        }
+}
