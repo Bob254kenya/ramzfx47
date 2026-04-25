@@ -36,7 +36,8 @@ export function useTickLoader(symbol: MarketSymbol, maxTicks: number = 1000) {
     try {
       const history = await derivApi.getTickHistory(symbol, maxTicks);
       const prices = history.history.prices || [];
-      const digits = prices.map(getLastDigit);
+      // FIXED: Pass symbol to getLastDigit
+      const digits = prices.map(price => getLastDigit(price, symbol));
 
       if (mountedRef.current) {
         setState({
@@ -69,7 +70,8 @@ export function useTickLoader(symbol: MarketSymbol, maxTicks: number = 1000) {
     const handler = (data: any) => {
       if (!data.tick || data.tick.symbol !== symbol || !mountedRef.current) return;
       const price = data.tick.quote;
-      const digit = getLastDigit(price);
+      // FIXED: Pass symbol to getLastDigit
+      const digit = getLastDigit(price, symbol);
 
       setState(prev => {
         const newPrices = [...prev.prices, price].slice(-maxTicks);
