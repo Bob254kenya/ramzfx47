@@ -1222,7 +1222,8 @@ export default function ProScannerBot() {
       
       const sym = data.tick.symbol as string;
       const quote = data.tick.quote;
-      const digit = getLastDigit(quote);
+      // FIXED: Pass symbol to getLastDigit
+      const digit = getLastDigit(quote, sym);
       
       if (typeof digit !== 'number' || isNaN(digit) || digit < 0 || digit > 9) {
         return;
@@ -2139,7 +2140,8 @@ export default function ProScannerBot() {
         }
       }
 
-      const exitDigit = String(getLastDigit(result.sellPrice || 0));
+      // FIXED: Pass symbol to getLastDigit
+      const exitDigit = String(getLastDigit(result.sellPrice || 0, tradeSymbol));
 
       let switchInfo = `Pattern: ${patternDigits} | Exit: ${exitDigit} | Last 15: ${last15Ticks.join(',')}`;
       let shouldResetMartingale = false;
@@ -3454,4 +3456,4 @@ export default function ProScannerBot() {
       <NotificationPopup />
     </>
   );
-        }
+}
