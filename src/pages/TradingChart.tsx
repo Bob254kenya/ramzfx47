@@ -583,7 +583,9 @@ const checkSameDirectionPattern = (symbol: string, requiredTicks: number): { mat
 };
 
 const findSameDirectionMatch = (selectedStrategy: M2RecoveryType): { symbol: string; contractType: string; tickLength: number; patternDigits: string; last15Ticks: number[] } | null => {
-  const tickLength = parseInt(selectedStrategy.split('_')[2]);
+  // FIXED: Parse tick length correctly from strategy name
+  const match = selectedStrategy.match(/\d+$/);
+  const tickLength = match ? parseInt(match[0]) : 0;
   if (isNaN(tickLength) || tickLength < 3 || tickLength > 10) return null;
   
   for (const market of SCANNER_MARKETS) {
@@ -692,31 +694,31 @@ export default function ProScannerBot() {
 
   // Update market statistics from tick data
   const updateMarketStats = useCallback((symbol: string, digit: number) => {
-    const counter = marketTickCountersRef.current.get(symbol);
+    let counter = marketTickCountersRef.current.get(symbol);
     if (!counter) {
-      marketTickCountersRef.current.set(symbol, { even: 0, odd: 0, over4: 0, under5: 0, total: 0 });
+      counter = { even: 0, odd: 0, over4: 0, under5: 0, total: 0 };
+      marketTickCountersRef.current.set(symbol, counter);
     }
     
-    const current = marketTickCountersRef.current.get(symbol)!;
-    current.total++;
+    counter.total++;
     
     if (digit % 2 === 0) {
-      current.even++;
+      counter.even++;
     } else {
-      current.odd++;
+      counter.odd++;
     }
     
     if (digit >= 5) {
-      current.over4++;
+      counter.over4++;
     }
     if (digit <= 4) {
-      current.under5++;
+      counter.under5++;
     }
     
-    const evenPercentage = (current.even / current.total) * 100;
-    const oddPercentage = (current.odd / current.total) * 100;
-    const over4Percentage = (current.over4 / current.total) * 100;
-    const under5Percentage = (current.under5 / current.total) * 100;
+    const evenPercentage = (counter.even / counter.total) * 100;
+    const oddPercentage = (counter.odd / counter.total) * 100;
+    const over4Percentage = (counter.over4 / counter.total) * 100;
+    const under5Percentage = (counter.under5 / counter.total) * 100;
     
     const directionStrength = Math.max(evenPercentage, oddPercentage);
     const barrierStrength = Math.max(over4Percentage, under5Percentage);
@@ -738,11 +740,11 @@ export default function ProScannerBot() {
         if (existing) {
           return prev.map(s => s.symbol === symbol ? {
             ...s,
-            evenCount: current.even,
-            oddCount: current.odd,
-            over4Count: current.over4,
-            under5Count: current.under5,
-            totalTicks: current.total,
+            evenCount: counter.even,
+            oddCount: counter.odd,
+            over4Count: counter.over4,
+            under5Count: counter.under5,
+            totalTicks: counter.total,
             evenPercentage,
             oddPercentage,
             over4Percentage,
@@ -756,11 +758,11 @@ export default function ProScannerBot() {
             symbol,
             name: marketInfo.name,
             color: marketInfo.color,
-            evenCount: current.even,
-            oddCount: current.odd,
-            over4Count: current.over4,
-            under5Count: current.under5,
-            totalTicks: current.total,
+            evenCount: counter.even,
+            oddCount: counter.odd,
+            over4Count: counter.over4,
+            under5Count: counter.under5,
+            totalTicks: counter.total,
             evenPercentage,
             oddPercentage,
             over4Percentage,
@@ -1101,7 +1103,7 @@ export default function ProScannerBot() {
     }
     
     return false;
-  }, []);
+  }, [stopBot]);
 
   // Improved connection monitoring with automatic resumption
   useEffect(() => {
@@ -1157,7 +1159,7 @@ export default function ProScannerBot() {
       if (dataStalenessChecker) clearInterval(dataStalenessChecker);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
-  }, [isRunning, ensureConnection]);
+  }, [isRunning, ensureConnection, stopBot]);
 
   // Heartbeat mechanism
   useEffect(() => {
@@ -1180,11 +1182,6 @@ export default function ProScannerBot() {
     setBotStatus('idle');
     setIsScannerVoiceActive(false);
     botStateRef.current = null;
-    
-    // Clear any pending timeouts/intervals
-    if (statsIntervalRef.current) {
-      clearInterval(statsIntervalRef.current);
-    }
     
     logDebug('Bot stopped successfully');
   }, []);
@@ -1377,11 +1374,13 @@ export default function ProScannerBot() {
         if (digits.length < 2) return { matched: false };
         const last2 = digits.slice(-2);
         const patternKey = `${last2.join(',')}`;
+        const allZeros = last2[0] === 0 && last2[1] === 0;
+        const allNines = last2[0] === 9 && last2[1] === 9;
         
-        if (last2[0] === 0 && last2[1] === 0) {
+        if (allZeros) {
           return { matched: true, contractType: 'DIGITOVER', barrier: '1', patternDigits: patternKey };
         }
-        if (last2[0] === 9 && last2[1] === 9) {
+        if (allNines) {
           return { matched: true, contractType: 'DIGITUNDER', barrier: '8', patternDigits: patternKey };
         }
         return { matched: false };
@@ -2076,7 +2075,7 @@ export default function ProScannerBot() {
     let contractId: string | null = null;
 
     try {
-      await waitForNextTick(tradeSymbol as MarketSymbol);
+      await waitForNextTick(tradeSymbol);
 
       const buyParams: any = {
         contract_type: contractType, symbol: tradeSymbol,
@@ -2114,7 +2113,7 @@ export default function ProScannerBot() {
       
       const result = await derivApi.waitForContractResult(contractId);
       const won = result.status === 'won';
-      const pnl = result.profit;
+      const pnl = result.profit || 0;
       
       // Only add to log if trade was successful
       const logId = ++logIdRef.current;
@@ -2376,12 +2375,12 @@ export default function ProScannerBot() {
         }
 
         setBotStatus('pattern_matched');
-        tradeSymbol = matchData!.symbol;
-        contractType = matchData!.contractType;
-        barrier = matchData!.barrier;
-        patternDigits = matchData!.patternDigits;
-        digitsArray = matchData!.digitsArray;
-        last15Ticks = matchData!.last15Ticks;
+        tradeSymbol = matchData.symbol;
+        contractType = matchData.contractType;
+        barrier = matchData.barrier;
+        patternDigits = matchData.patternDigits;
+        digitsArray = matchData.digitsArray;
+        last15Ticks = matchData.last15Ticks;
         await new Promise(r => setTimeout(r, 500));
       }
       else if (inRecovery && strategyM2Enabled && m2RecoveryType !== 'disabled') {
@@ -2413,12 +2412,12 @@ export default function ProScannerBot() {
         }
 
         setBotStatus('pattern_matched');
-        tradeSymbol = matchData!.symbol;
-        contractType = matchData!.contractType;
-        barrier = matchData!.barrier;
-        patternDigits = matchData!.patternDigits;
-        digitsArray = matchData!.digitsArray;
-        last15Ticks = matchData!.last15Ticks;
+        tradeSymbol = matchData.symbol;
+        contractType = matchData.contractType;
+        barrier = matchData.barrier;
+        patternDigits = matchData.patternDigits;
+        digitsArray = matchData.digitsArray;
+        last15Ticks = matchData.last15Ticks;
         await new Promise(r => setTimeout(r, 500));
       }
       else {
@@ -2471,7 +2470,7 @@ export default function ProScannerBot() {
   }, [isAuthorized, isRunning, stake, m1Enabled, m2Enabled,
     martingaleOn, martingaleMultiplier, martingaleMaxSteps, takeProfit, stopLoss,
     strategyM1Enabled, strategyM2Enabled, m1StrategyType, m2RecoveryType,
-    findM1Match, findM2Match, addLog, updateLog, executeRealTrade, ensureConnection, forceImmediateBalanceUpdate]);
+    findM1Match, findM2Match, addLog, updateLog, executeRealTrade, ensureConnection, forceImmediateBalanceUpdate, stopBot]);
 
   const statusConfig: Record<BotStatus, { icon: string; label: string; color: string }> = {
     idle: { icon: '⚪', label: 'IDLE', color: 'text-slate-400' },
