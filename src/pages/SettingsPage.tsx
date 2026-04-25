@@ -659,8 +659,7 @@ function simulateVirtualContract(
       if (data.tick && data.tick.symbol === symbol) {
         clearTimeout(timeout);
         unsub();
-        // FIXED: Added symbol parameter
-        const digit = getLastDigit(data.tick.quote, symbol);
+        const digit = getLastDigit(data.tick.quote);
         const b = parseInt(barrier) || 0;
         let won = false;
         switch (contractType) {
@@ -982,8 +981,7 @@ export default function TradingChart() {
         const hist = await derivApi.getTickHistory(symbol as MarketSymbol, ticksToLoad);
         if (!active) return;
         
-        // FIXED: Added symbol parameter to getLastDigit
-        const historicalDigits = (hist.history.prices || []).map(p => getLastDigit(p, symbol));
+        const historicalDigits = (hist.history.prices || []).map(p => getLastDigit(p));
         const historicalPrices = hist.history.prices || [];
         globalTickHistory[symbol] = historicalDigits;
         globalTickPrices[symbol] = historicalPrices;
@@ -1000,8 +998,7 @@ export default function TradingChart() {
             if (!active || !data.tick) return;
             
             const quote = data.tick.quote;
-            // FIXED: Added symbol parameter
-            const digit = getLastDigit(quote, symbol);
+            const digit = getLastDigit(quote);
             const epoch = data.tick.epoch;
             
             addTick(symbol, digit, quote);
@@ -1087,8 +1084,7 @@ export default function TradingChart() {
 
   const candles = useMemo(() => buildCandles(prices, times, timeframe), [prices, times, timeframe]);
   const currentPrice = prices[prices.length - 1] || 0;
-  // FIXED: Added symbol parameter
-  const lastDigit = getLastDigit(currentPrice, symbol);
+  const lastDigit = getLastDigit(currentPrice);
   
   const bb = useMemo(() => calculateBollingerBands(prices, 20), [prices]);
   const ema50 = useMemo(() => calcEMA(prices, 50), [prices]);
@@ -1761,8 +1757,7 @@ export default function TradingChart() {
       const won = result.status === 'won';
       const profit = result.profit;
       const newPnl = currentPnl + profit;
-      // FIXED: Added symbol parameter
-      const resultDigit = getLastDigit(result.price || 0, botConfig.botSymbol);
+      const resultDigit = getLastDigit(result.price || 0);
       
       setTradeHistory(prev => prev.map(t =>
         t.id === contractId
@@ -2109,7 +2104,7 @@ export default function TradingChart() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />Ramzfx Trading Chart
+            <BarChart3 className="w-5 h-5 text-primary" />Milliefx Trading Chart
           </h1>
           <p className="text-xs text-muted-foreground">{marketName} • {timeframe} • {candles.length} candles</p>
         </div>
@@ -2308,7 +2303,7 @@ export default function TradingChart() {
           {/* Digit Analysis - Real-Time Updates */}
           <div className="bg-card border border-border rounded-xl p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground">Ramzfx Digit Analysis (Real-Time)</h3>
+              <h3 className="text-xs font-semibold text-foreground">Milliefx Digit Analysis (Real-Time)</h3>
               <div className="flex items-center gap-2">
                 <label className="text-[9px] text-muted-foreground">Tick Range:</label>
                 <Select value={String(tickRange)} onValueChange={v => setTickRange(parseInt(v))}>
@@ -2423,7 +2418,7 @@ export default function TradingChart() {
           <div className="bg-card border border-primary/30 rounded-xl p-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 text-primary" />Ramzfx AI Voice Signals
+                <Zap className="w-3.5 h-3.5 text-primary" />Milliefx AI Voice Signals
               </h3>
               <Button
                 size="sm"
@@ -2445,7 +2440,7 @@ export default function TradingChart() {
               </Button>
             </div>
             {voiceEnabled && (
-              <p className="text-[9px] text-muted-foreground mt-1">🔊 Ramzfx AI will announce trade results</p>
+              <p className="text-[9px] text-muted-foreground mt-1">🔊 Milliefx AI will announce trade results</p>
             )}
           </div>
 
@@ -2513,7 +2508,7 @@ export default function TradingChart() {
           <div className={`bg-card border rounded-xl p-3 space-y-2 ${botRunning ? 'border-profit glow-profit' : 'border-border'}`}>
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 text-primary" /> Ramzfx Speed Bot
+                <Zap className="w-3.5 h-3.5 text-primary" /> Milliefx Speed Bot
               </h3>
               <div className="flex items-center gap-2">
                 <Button
