@@ -659,7 +659,8 @@ function simulateVirtualContract(
       if (data.tick && data.tick.symbol === symbol) {
         clearTimeout(timeout);
         unsub();
-        const digit = getLastDigit(data.tick.quote);
+        // FIXED: Added symbol parameter
+        const digit = getLastDigit(data.tick.quote, symbol);
         const b = parseInt(barrier) || 0;
         let won = false;
         switch (contractType) {
@@ -981,7 +982,8 @@ export default function TradingChart() {
         const hist = await derivApi.getTickHistory(symbol as MarketSymbol, ticksToLoad);
         if (!active) return;
         
-        const historicalDigits = (hist.history.prices || []).map(p => getLastDigit(p));
+        // FIXED: Added symbol parameter to getLastDigit
+        const historicalDigits = (hist.history.prices || []).map(p => getLastDigit(p, symbol));
         const historicalPrices = hist.history.prices || [];
         globalTickHistory[symbol] = historicalDigits;
         globalTickPrices[symbol] = historicalPrices;
@@ -998,7 +1000,8 @@ export default function TradingChart() {
             if (!active || !data.tick) return;
             
             const quote = data.tick.quote;
-            const digit = getLastDigit(quote);
+            // FIXED: Added symbol parameter
+            const digit = getLastDigit(quote, symbol);
             const epoch = data.tick.epoch;
             
             addTick(symbol, digit, quote);
@@ -1084,7 +1087,8 @@ export default function TradingChart() {
 
   const candles = useMemo(() => buildCandles(prices, times, timeframe), [prices, times, timeframe]);
   const currentPrice = prices[prices.length - 1] || 0;
-  const lastDigit = getLastDigit(currentPrice);
+  // FIXED: Added symbol parameter
+  const lastDigit = getLastDigit(currentPrice, symbol);
   
   const bb = useMemo(() => calculateBollingerBands(prices, 20), [prices]);
   const ema50 = useMemo(() => calcEMA(prices, 50), [prices]);
@@ -1757,7 +1761,8 @@ export default function TradingChart() {
       const won = result.status === 'won';
       const profit = result.profit;
       const newPnl = currentPnl + profit;
-      const resultDigit = getLastDigit(result.price || 0);
+      // FIXED: Added symbol parameter
+      const resultDigit = getLastDigit(result.price || 0, botConfig.botSymbol);
       
       setTradeHistory(prev => prev.map(t =>
         t.id === contractId
