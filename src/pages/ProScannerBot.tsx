@@ -746,7 +746,7 @@ const TradingChartPopup = ({ onClose, isRunning }: { onClose: () => void; isRunn
         const hist = await derivApi.getTickHistory(symbol as MarketSymbol, 1000);
         if (!active) return;
         
-        const historicalDigits = (hist.history.prices || []).map((p: number) => getLastDigit(p));
+        const historicalDigits = (hist.history.prices || []).map((p: number) => getLastDigit(p, symbol));
         const historicalPrices = hist.history.prices || [];
         chartTickHistory[symbol] = historicalDigits;
         chartTickPrices[symbol] = historicalPrices;
@@ -757,7 +757,7 @@ const TradingChartPopup = ({ onClose, isRunning }: { onClose: () => void; isRunn
           subscriptionRef.current = await derivApi.subscribeTicks(symbol as MarketSymbol, (data: any) => {
             if (!active || !data.tick) return;
             const quote = data.tick.quote;
-            const digit = getLastDigit(quote);
+            const digit = getLastDigit(quote, symbol);
             addChartTick(symbol, digit, quote);
           });
           subscribedRef.current = true;
@@ -1299,7 +1299,7 @@ function simulateVirtualContract(
       if (data.tick && data.tick.symbol === symbol) {
         clearTimeout(timeout);
         unsub();
-        const digit = getLastDigit(data.tick.quote);
+        const digit = getLastDigit(data.tick.quote, symbol);
         const b = parseInt(barrier) || 0;
         let won = false;
         switch (contractType) {
@@ -1676,7 +1676,7 @@ export default function ProScannerBot() {
     const handler = (data: any) => {
       if (!data.tick || !active) return;
       const sym = data.tick.symbol as string;
-      const digit = getLastDigit(data.tick.quote);
+      const digit = getLastDigit(data.tick.quote, sym);
       const now = performance.now();
 
       const map = tickMapRef.current;
@@ -1906,7 +1906,7 @@ export default function ProScannerBot() {
 
     try {
       if (!turboMode) {
-        await waitForNextTick(tradeSymbol as MarketSymbol);
+        await waitForNextTick(tradeSymbol);
       }
 
       const buyParams: any = {
@@ -1947,7 +1947,7 @@ export default function ProScannerBot() {
       
       updateBalanceImmediately(pnl).catch(console.error);
 
-      const exitDigit = String(getLastDigit(result.sellPrice || 0));
+      const exitDigit = String(getLastDigit(result.sellPrice || 0, tradeSymbol));
 
       let switchInfo = '';
       let newCStake = cStake;
