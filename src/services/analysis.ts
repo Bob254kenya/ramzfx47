@@ -8,13 +8,54 @@
  * Extract the last digit from a tick price.
  * Converts to string, removes decimal, takes last character.
  * Digit 0 is a valid result.
+ * 
+ * @param price - The price value
+ * @param symbol - Optional symbol for market-specific extraction
  */
-export function getLastDigit(price: number): number {
+export function getLastDigit(price: number, symbol?: string): number {
   if (price === null || price === undefined || Number.isNaN(price)) {
     console.error('[getLastDigit] Invalid price:', price);
     return 0;
   }
-  // Deriv digit extraction: toFixed(2) then last character
+  
+  // Market-aware extraction when symbol is provided
+  if (symbol) {
+    // Check for different market types
+    const upperSymbol = symbol.toUpperCase();
+    
+    // Forex pairs (6 characters like EURUSD, GBPJPY)
+    // For forex, we typically look at the pip digit (4th or 5th decimal)
+    if (upperSymbol.match(/^[A-Z]{6}$/)) {
+      // Use 5 decimal places for forex
+      const fixedStr = parseFloat(String(price)).toFixed(5);
+      const lastChar = fixedStr.slice(-1);
+      const digit = parseInt(lastChar, 10);
+      
+      if (Number.isNaN(digit) || digit < 0 || digit > 9) {
+        console.error('[getLastDigit] Failed extraction from price:', price, '→ raw:', lastChar);
+        return 0;
+      }
+      
+      return digit;
+    }
+    
+    // Indices and commodities typically have 2 decimal places
+    if (upperSymbol.includes('USD') || upperSymbol.includes('EUR') || 
+        upperSymbol.includes('GBP') || upperSymbol.includes('JPY')) {
+      const fixedStr = parseFloat(String(price)).toFixed(2);
+      const lastChar = fixedStr.slice(-1);
+      const digit = parseInt(lastChar, 10);
+      
+      if (Number.isNaN(digit) || digit < 0 || digit > 9) {
+        console.error('[getLastDigit] Failed extraction from price:', price, '→ raw:', lastChar);
+        return 0;
+      }
+      
+      return digit;
+    }
+  }
+  
+  // Default extraction: toFixed(2) then last character
   const fixedStr = parseFloat(String(price)).toFixed(2);
   const lastChar = fixedStr.slice(-1);
   const digit = parseInt(lastChar, 10);
