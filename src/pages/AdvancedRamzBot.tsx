@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Play, StopCircle, Trash2, Radar, Search } from 'lucide-react';
+import { getLastDigit, getMarketAwareLastDigit } from '@/services/analysis';
 
 type ContractType = 'DIGITEVEN' | 'DIGITODD' | 'DIGITMATCH' | 'DIGITDIFF' | 'DIGITOVER' | 'DIGITUNDER';
 type PatternType = 'pattern' | 'digit';
@@ -42,12 +43,15 @@ interface TradeEntry {
 
 const SCANNER_MARKETS = MARKETS.map(m => m.symbol);
 
-function extractLastDigit(price: number): number {
-  return parseInt(parseFloat(String(price)).toFixed(2).slice(-1), 10);
+function extractLastDigit(price: number, symbol?: string): number {
+  if (symbol) {
+    return getMarketAwareLastDigit(price, symbol);
+  }
+  return getLastDigit(price);
 }
 
 function extractExtendedDigit(price: number): number {
-  const priceStr = parseFloat(String(price)).toFixed(2);
+  const priceStr = parseFloat(String(price)).toFixed(4);
   return parseInt(priceStr.replace('.', '').slice(-2), 10);
 }
 
@@ -133,7 +137,7 @@ export default function AdvancedRamzBot() {
     derivApi.subscribeTicks(symbol, (data: any) => {
       if (data.tick) {
         const price = parseFloat(data.tick.quote);
-        const digit = extractLastDigit(price);
+        const digit = extractLastDigit(price, data.tick.symbol);
         const extendedDigit = extractExtendedDigit(price);
         const entry: TickEntry = { digit, extendedDigit, isEven: digit % 2 === 0, price, time: Date.now() };
         tickHistoryRef.current.push(entry);
@@ -154,7 +158,7 @@ export default function AdvancedRamzBot() {
       if (!data.tick || !active) return;
       const sym = data.tick.symbol as string;
       const price = parseFloat(data.tick.quote);
-      const digit = extractLastDigit(price);
+      const digit = extractLastDigit(price, sym);
       const extendedDigit = extractExtendedDigit(price);
       const entry: TickEntry = { digit, extendedDigit, isEven: digit % 2 === 0, price, time: Date.now() };
 
